@@ -1,0 +1,24 @@
+# Xcode & Swift
+DerivedData/
+build/
+.swiftpm/
+.build/
+.package/
+Packages/
+xcuserdata/
+*.xcuserstate
+
+# Assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.pdf
+*.xcassets/
+
+# Logs & temporary
+*.log
+.DS_Store
+
+# SPM binaries
+.swiftpm/xcode

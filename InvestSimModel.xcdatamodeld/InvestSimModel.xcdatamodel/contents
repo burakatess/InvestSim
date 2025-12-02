@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24299" systemVersion="25B78" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="AssetDefinition" representedClassName="AssetDefinition" syncable="YES">
+        <attribute name="category" attributeType="String"/>
+        <attribute name="code" attributeType="String"/>
+        <attribute name="coingeckoId" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="currency" attributeType="String"/>
+        <attribute name="displayName" attributeType="String"/>
+        <attribute name="externalId" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isActive" optional="YES" attributeType="Boolean" defaultValueString="YES"/>
+        <attribute name="lastSyncDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="logoURL" optional="YES" attributeType="String"/>
+        <attribute name="marketCapRank" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="metadata" optional="YES" attributeType="Binary"/>
+        <attribute name="providerType" optional="YES" attributeType="String"/>
+        <attribute name="symbol" optional="YES" attributeType="String"/>
+        <attribute name="tefasCode" optional="YES" attributeType="String"/>
+        <attribute name="yahooSymbol" optional="YES" attributeType="String"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="code"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="DCAPlan" representedClassName="DCAPlan" syncable="YES">
+        <attribute name="amountTRY" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="amountUnit" optional="YES" attributeType="String"/>
+        <attribute name="amountValue" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="asset" optional="YES" attributeType="String"/>
+        <attribute name="assetCode" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dayOfMonth" optional="YES" attributeType="Integer 16" defaultValueString="0"/>
+        <attribute name="dayOfWeek" optional="YES" attributeType="Integer 16" defaultValueString="0"/>
+        <attribute name="frequency" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isActive" optional="YES" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="lastCompletionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="messageTemplateId" optional="YES" attributeType="String"/>
+        <attribute name="motivationalTone" optional="YES" attributeType="String"/>
+        <attribute name="nextDueDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="reminderOffsets" optional="YES" attributeType="Transformable" valueTransformerName="NSSecureUnarchiveFromData" customClassName="NSArray"/>
+        <attribute name="startDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="timeZoneIdentifier" optional="YES" attributeType="String"/>
+        <attribute name="title" optional="YES" attributeType="String"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="DCATrade" representedClassName="DCATrade" syncable="YES">
+        <attribute name="asset" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="notes" optional="YES" attributeType="String"/>
+        <attribute name="planId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="quantity" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="source" optional="YES" attributeType="String"/>
+        <attribute name="totalCostTRY" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="tradeDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="unitPriceTRY" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+    </entity>
+    <entity name="HoldingLot" representedClassName="HoldingLot" syncable="YES">
+        <attribute name="asset" optional="YES" attributeType="String"/>
+        <attribute name="buyDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="quantity" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="totalCostTRY" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="unitCostTRY" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="PlanNotificationRecord" representedClassName="PlanNotificationRecord" syncable="YES">
+        <attribute name="fireDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="notificationId" optional="YES" attributeType="String"/>
+        <attribute name="offsetDays" optional="YES" attributeType="Integer 16" defaultValueString="0"/>
+        <attribute name="planId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="state" optional="YES" attributeType="String"/>
+    </entity>
+    <entity name="PlanReminderHistory" representedClassName="PlanReminderHistory" syncable="YES">
+        <attribute name="completionDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="note" optional="YES" attributeType="String"/>
+        <attribute name="planId" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="PriceHistoryRecord" representedClassName="PriceHistoryRecord" syncable="YES">
+        <attribute name="assetCode" attributeType="String"/>
+        <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="price" attributeType="Double" defaultValueString="0"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="assetCode"/>
+                <constraint value="date"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="Scenario" representedClassName="Scenario" syncable="YES">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="descriptionText" optional="YES" attributeType="String"/>
+        <attribute name="endDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="initialAmount" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="isActive" optional="YES" attributeType="Boolean" defaultValueString="NO"/>
+        <attribute name="monthlyContribution" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="paramsJSON" optional="YES" attributeType="Binary"/>
+        <attribute name="startDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="snapshots" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ScenarioSnapshot" inverseName="scenario" inverseEntity="ScenarioSnapshot"/>
+    </entity>
+    <entity name="ScenarioSnapshot" representedClassName="ScenarioSnapshot" syncable="YES">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="profitLoss" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="profitLossPercentage" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="totalCost" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <attribute name="totalValue" optional="YES" attributeType="Decimal" defaultValueString="0.0"/>
+        <relationship name="scenario" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Scenario" inverseName="snapshots" inverseEntity="Scenario"/>
+    </entity>
+</model>

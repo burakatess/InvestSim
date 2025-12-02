@@ -1,0 +1,197 @@
+import Foundation
+
+/// DCA (Dollar Cost Averaging) simülasyon motoru
+/// Kullanıcının belirlediği parametrelere göre yatırım simülasyonu yapar
+public class DCAEngine {
+    
+    /// Maksimum geriye gitme günü (varsayılan: 7)
+    public let maxBackDays: Int
+    
+    public init(maxBackDays: Int = 7) {
+        self.maxBackDays = maxBackDays
+    }
+    
+    /// DCA simülasyonu çalıştırır
+    /// - Parameters:
+    ///   - config: Simülasyon konfigürasyonu
+    ///   - provider: Fiyat sağlayıcısı
+    /// - Returns: Simülasyon sonucu
+    /// - Throws: DCAError
+    func simulate(config: ScenarioConfig, provider: DCAProvider) throws -> SimulationResult {
+        // Validasyonları yap
+        try validateConfig(config)
+        
+        // Simülasyon verilerini hazırla
+        var holdings: [String: Decimal] = [:] // symbol -> totalUnits
+        var costs: [String: Decimal] = [:] // symbol -> totalCost
+        var deals: [DealLog] = []
+        
+        // Her ay için işlem yap
+        for month in 0..<config.months {
+            let targetDate = config.startDate.addMonths(month).shiftToDay(config.buyDayOfMonth)
+            
+            // Her varlık için alım yap
+            for allocation in config.allocations {
+                let allocationAmount = config.monthlyBudgetTRY * allocation.weight
+                
+                // Fiyat bul (7 gün geriye git gerekirse)
+                if let (price, actualDate) = findPrice(
+                    symbol: allocation.symbol,
+                    targetDate: targetDate,
+                    provider: provider
+                ) {
+                    // Başarılı alım
+                    let units = allocationAmount / price
+                    let spentAmount = units * price
+                    
+                    // Holdings'i güncelle
+                    holdings[allocation.symbol, default: 0] += units
+                    costs[allocation.symbol, default: 0] += spentAmount
+                    
+                    // Deal log oluştur
+                    let deal = DealLog.successful(
+                        date: actualDate,
+                        targetDate: targetDate,
+                        symbol: allocation.symbol,
+                        price: price,
+                        units: units,
+                        spentTRY: spentAmount
+                    )
+                    deals.append(deal)
+                } else {
+                    // Fiyat bulunamadı - skip
+                    let deal = DealLog.skipped(
+                        targetDate: targetDate,
+                        symbol: allocation.symbol
+                    )
+                    deals.append(deal)
+                }
+            }
+        }
+        
+        // Breakdown hesapla
+        let breakdown = calculateBreakdown(holdings: holdings, costs: costs, provider: provider)
+        
+        // Toplam değerleri hesapla
+        let investedTotal = Decimal(config.months) * config.monthlyBudgetTRY
+        let currentValueTotal = breakdown.reduce(Decimal.zero) { $0 + $1.currentValueTRY }
+        let profit = currentValueTotal - investedTotal
+        let profitPct = investedTotal > 0 ? (profit / investedTotal) * 100 : 0
+        
+        return SimulationResult(
+            investedTotalTRY: investedTotal,
+            currentValueTRY: currentValueTotal,
+            profitTRY: profit,
+            profitPct: profitPct,
+            deals: deals,
+            breakdown: breakdown
+        )
+    }
+    
+    // MARK: - Private Methods
+    
+    /// Konfigürasyonu doğrular
+    private func validateConfig(_ config: ScenarioConfig) throws {
+        // Ay sayısı kontrolü
+        if config.months < 1 {
+            throw DCAError.monthsOutOfRange(actual: config.months, min: 1, max: Int.max)
+        }
+        
+        // Alım günü kontrolü
+        if config.buyDayOfMonth < 1 || config.buyDayOfMonth > 31 {
+            throw DCAError.buyDayOutOfRange(actual: config.buyDayOfMonth, min: 1, max: 31)
+        }
+        
+        // Ağırlık toplamı kontrolü
+        if !config.hasValidWeightSum {
+            throw DCAError.invalidWeightsSum(actual: config.totalWeight, expected: 1.0)
+        }
+        
+        // Boş allocation kontrolü
+        if config.allocations.isEmpty {
+            throw DCAError.emptyAllocations
+        }
+        
+        // Geçersiz allocation kontrolü
+        for allocation in config.allocations {
+            if !allocation.isValid {
+                throw DCAError.invalidAllocation(allocation)
+            }
+        }
+    }
+    
+    /// Fiyat bulur (gerekirse geriye gider)
+    private func findPrice(symbol: String, targetDate: Date, provider: DCAProvider) -> (price: Decimal, date: Date)? {
+        var currentDate = targetDate
+        var daysBack = 0
+        
+        while daysBack <= maxBackDays {
+            if let price = provider.historicalPrice(on: currentDate, symbol: symbol) {
+                return (price, currentDate)
+            }
+            
+            // Bir gün geriye git
+            currentDate = currentDate.addDays(-1)
+            daysBack += 1
+        }
+        
+        return nil
+    }
+    
+    /// Breakdown hesaplar
+    private func calculateBreakdown(holdings: [String: Decimal], costs: [String: Decimal], provider: DCAProvider) -> [BreakdownRow] {
+        var breakdown: [BreakdownRow] = []
+        
+        for (symbol, totalUnits) in holdings {
+            let totalCost = costs[symbol] ?? 0
+            let avgCost = totalUnits > 0 ? totalCost / totalUnits : 0
+            let currentPrice = provider.latestPrice(symbol: symbol) ?? 0
+            
+            let row = BreakdownRow.create(
+                symbol: symbol,
+                totalUnits: totalUnits,
+                avgCostTRY: avgCost,
+                currentPrice: currentPrice
+            )
+            
+            breakdown.append(row)
+        }
+        
+        return breakdown.sorted { $0.symbol < $1.symbol }
+    }
+}
+
+// MARK: - Convenience Methods
+public extension DCAEngine {
+    /// Hızlı simülasyon (varsayılan konfigürasyon ile)
+    /// - Parameter provider: Fiyat sağlayıcısı
+    /// - Returns: Simülasyon sonucu
+    /// - Throws: DCAError
+    func simulateWithDefaultConfig(provider: DCAProvider) throws -> SimulationResult {
+        let defaultConfig = ScenarioConfig(
+            name: "Default Config",
+            initialInvestment: 1000,
+            monthlyInvestment: 100,
+            investmentAsset: .BTC,
+            investmentCurrency: .USD,
+            startDate: Calendar.current.date(from: DateComponents(year: 2022, month: 1, day: 1))!,
+            endDate: Date(),
+            interval: .month,
+            frequency: 1,
+            slippage: 0.001,
+            transactionFee: 0.0005
+        )
+        return try simulate(config: defaultConfig, provider: provider)
+    }
+    
+    /// Simülasyon çalıştırır ve sonucu async olarak döndürür
+    /// - Parameters:
+    ///   - config: Simülasyon konfigürasyonu
+    ///   - provider: Fiyat sağlayıcısı
+    /// - Returns: Simülasyon sonucu
+    func simulateAsync(config: ScenarioConfig, provider: DCAProvider) async throws -> SimulationResult {
+        return try await Task.detached {
+            try self.simulate(config: config, provider: provider)
+        }.value
+    }
+}

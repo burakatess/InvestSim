@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   Info.plist
+   investsimulator
+
+   Created by Burak on 29.09.2025.
+   Copyright (c) 2025 ___ORGANIZATIONNAME___. All rights reserved.
+-->
+<plist version="1.0">
+<dict>
+	<key>EVDS_API_KEY</key>
+	<string>LAiYBoYJtC</string>
+	<key>EVDS_BASE_URL</key>
+	<string>https://evds2.tcmb.gov.tr/service/evds/</string>
+	<key>BINANCE_API_KEY</key>
+	<string>YOUR_BINANCE_API_KEY_HERE</string>
+	<key>COINGECKO_API_KEY</key>
+	<string>YOUR_COINGECKO_API_KEY_HERE</string>
+	<key>YAHOO_FINANCE_API_KEY</key>
+	<string>YOUR_YAHOO_API_KEY_HERE</string>
+	<key>METALS_API_KEY</key>
+	<string>YOUR_METALS_API_KEY_HERE</string>
+	<key>COLLECTAPI_KEY</key>
+	<string>YOUR_COLLECTAPI_KEY_HERE</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>tr</string>
+		<string>en</string>
+	</array>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>tr</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsArbitraryLoads</key>
+		<true/>
+	</dict>
+	<key>SUPABASE_URL</key>
+	<string>https://hplmwcjyfzjghijdqypa.supabase.co</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwbG13Y2p5ZnpqZ2hpamRxeXBhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM2MjY1NjEsImV4cCI6MjA3OTIwMjU2MX0.G5Cv2az01Jis-fH4P7ThakjQfVfGI8UMKwrY-hTh5k4</string>
+	<key>GIDClientID</key>
+	<string>611362196900-shkufjnfpb4pujmc7rgn90pnhll82o79.apps.googleusercontent.com</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.611362196900-shkufjnfpb4pujmc7rgn90pnhll82o79</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>
