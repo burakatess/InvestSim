@@ -76,7 +76,7 @@ public final class SubscriptionManager {
         debounceTask = Task { @MainActor in
             do {
                 try await Task.sleep(nanoseconds: 500_000_000)  // 500ms debounce
-                await self.performUpdate()
+                self.performUpdate()
             } catch {
                 // Task was cancelled, no need to perform update
             }
@@ -98,9 +98,9 @@ public final class SubscriptionManager {
 
         let toUnsubscribe = currentCodes.subtracting(visibleCodes)
 
-        // Only unsubscribe if we have > 20 extra subscriptions to keep memory usage in check
+        // Only unsubscribe if we have > 100 extra subscriptions to keep memory usage in check
         // but avoid constant connect/disconnect for small lists.
-        if toUnsubscribe.count > 20 {
+        if toUnsubscribe.count > 100 {
             // Unsubscribe from the oldest ones or just all of them?
             // Let's unsubscribe from all but keep the threshold high.
             toUnsubscribe.forEach { unsubscribe(assetCode: $0) }
@@ -130,10 +130,7 @@ public final class SubscriptionManager {
 
     // MARK: - Cleanup
     deinit {
-        debounceTask?.cancel()  // Cancel any pending debounce task
-        Task { @MainActor in
-            await unsubscribeAll()
-        }
+        debounceTask?.cancel()
         print("🎯 SubscriptionManager deinitialized")
     }
 }

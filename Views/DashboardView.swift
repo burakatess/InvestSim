@@ -151,7 +151,9 @@ struct DashboardView: View {
     }
 
     private var lastUpdateLabel: String {
-        guard let date = viewModel.lastUpdateTime else { return "Bilinmiyor" }
+        guard let date = viewModel.lastUpdateTime else {
+            return "Unknown"
+        }
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
@@ -591,7 +593,7 @@ struct DashboardView: View {
                         .font(.system(size: 14, weight: .medium, design: .rounded))
                         .foregroundColor(AppColors.textSecondary)
 
-                        Text("Unit Price: \(String(format: "%.2f", trade.price)) TL")
+                        Text("Unit Price: \(String(format: "%.2f", trade.price)) USD")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundColor(AppColors.textSecondary)
                     }
@@ -599,7 +601,7 @@ struct DashboardView: View {
                     Spacer()
 
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text("Total: \(String(format: "%.2f", trade.quantity * trade.price)) TL")
+                        Text("Total: \(String(format: "%.2f", trade.quantity * trade.price)) USD")
                             .font(.system(size: 14, weight: .semibold, design: .rounded))
                             .foregroundColor(AppColors.textPrimary)
 
@@ -733,7 +735,7 @@ struct DashboardView: View {
                             .font(.system(size: 14, weight: .semibold))
                             .foregroundColor(AppColors.textSecondary)
 
-                        Text(isHidden ? "•••••••• TL" : totalPortfolioValueString)
+                        Text(isHidden ? "••••••••" : totalPortfolioValueString)
                             .font(.system(size: 50, weight: .heavy))
                             .lineLimit(1)
                             .minimumScaleFactor(0.45)

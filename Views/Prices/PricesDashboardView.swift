@@ -42,6 +42,7 @@ struct PricesDashboardView: View {
     @State private var isSyncingAssets = false
     @State private var syncStatus: String?
     @State private var hasAppeared = false  // Guard için onAppear sonsuz döngüsünü önler
+    @State private var visibleAssets: [String: String] = [:]
     private let container: AppContainer
 
     init(container: AppContainer? = nil) {
@@ -331,19 +332,22 @@ extension PricesDashboardView {
             onToggleFavorite: { viewModel.toggleFavorite(for: row.asset) }
         )
         .onAppear {
-            // Lazy subscription: Subscribe when row appears
+            // Track visible assets for smart subscription
             let provider = row.asset.provider.rawValue
-            UnifiedPriceManager.shared.subscriptionManager.subscribe(
-                assetCode: row.asset.code,
-                provider: provider
-            )
+            visibleAssets[row.asset.code] = provider
+            scheduleSubscriptionUpdate()
         }
         .onDisappear {
-            // Lazy subscription: Unsubscribe when row disappears
-            UnifiedPriceManager.shared.subscriptionManager.unsubscribe(
-                assetCode: row.asset.code
-            )
+            // Remove from visible assets
+            visibleAssets.removeValue(forKey: row.asset.code)
+            scheduleSubscriptionUpdate()
         }
+    }
+
+    private func scheduleSubscriptionUpdate() {
+        // SubscriptionManager has internal debounce, so we can call this directly
+        let assets = visibleAssets.map { (code: $0.key, provider: $0.value) }
+        UnifiedPriceManager.shared.subscriptionManager.updateVisibleAssets(assets)
     }
 
     fileprivate var loadingView: some View {

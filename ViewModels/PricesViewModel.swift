@@ -40,6 +40,9 @@ final class PricesViewModel: ObservableObject {
     private var refreshTask: Task<Void, Never>?
     private var autoRefreshCancellable: AnyCancellable?
 
+    // Throttling
+    private var pendingUpdates: [String: Decimal] = [:]
+
     init(assetRepository: AssetRepository, priceManager: UnifiedPriceManager) {
         self.assetRepository = assetRepository
         self.priceManager = priceManager
@@ -75,26 +78,53 @@ final class PricesViewModel: ObservableObject {
             .store(in: &cancellables)
 
         setupAutoRefreshTimer()
+        setupUpdateFlushTimer()
+    }
+
+    private func setupUpdateFlushTimer() {
+        // Flush buffered updates every 1 second to prevent UI freezing
+        Timer.publish(every: 1.0, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                self?.flushUpdates()
+            }
+            .store(in: &cancellables)
     }
 
     private func handleRealtimeUpdate(_ update: PriceUpdate) {
-        // Update main rows
-        if let index = rows.firstIndex(where: { $0.asset.code == update.assetCode }) {
-            let decimalPrice = Decimal(update.price)
-            rows[index].price = decimalPrice
-            rows[index].change24h = computeChange(for: update.assetCode, newPrice: decimalPrice)
-            rows[index].lastUpdated = Date()
-            lastPrices[update.assetCode] = decimalPrice
+        // Buffer the update instead of applying immediately
+        pendingUpdates[update.assetCode] = Decimal(update.price)
+    }
 
-            // Update filteredRows directly for performance
-            if let filteredIndex = filteredRows.firstIndex(where: {
-                $0.asset.code == update.assetCode
-            }) {
-                filteredRows[filteredIndex] = rows[index]
+    private func flushUpdates() {
+        guard !pendingUpdates.isEmpty else { return }
+
+        let updates = pendingUpdates
+        pendingUpdates.removeAll()
+
+        // Apply all buffered updates in a single pass
+        for (code, price) in updates {
+            lastPrices[code] = price
+
+            // Update main rows
+            if let index = rows.firstIndex(where: { $0.asset.code == code }) {
+                rows[index].price = price
+                rows[index].change24h = computeChange(for: code, newPrice: price)
+                rows[index].lastUpdated = Date()
             }
-
-            lastUpdated = Date()
         }
+
+        // Update filtered rows directly
+        for i in 0..<filteredRows.count {
+            let code = filteredRows[i].asset.code
+            if let price = updates[code] {
+                filteredRows[i].price = price
+                filteredRows[i].change24h = computeChange(for: code, newPrice: price)
+                filteredRows[i].lastUpdated = Date()
+            }
+        }
+
+        lastUpdated = Date()
     }
 
     deinit {
@@ -120,45 +150,45 @@ final class PricesViewModel: ObservableObject {
         refreshTask = Task { [weak self] in
             guard let self else { return }
             var updatedRows: [PriceRow] = []
-            var errorCount = 0
-            let maxErrors = 10  // Increased from 5 to allow more retries
 
-            for definition in assetsSnapshot {
+            // Chunk assets into groups of 50 for batch fetching
+            let chunks = assets.chunked(into: 50)
+
+            for chunk in chunks {
                 if Task.isCancelled { return }
-                do {
-                    let def = assetRepository.fetch(byCode: definition.code) ?? definition
-                    let latest = try await priceManager.price(for: def.code)
-                    let decimalPrice = Decimal(latest)
-                    let change = computeChange(for: definition.code, newPrice: decimalPrice)
-                    lastPrices[definition.code] = decimalPrice
-                    updatedRows.append(
-                        PriceRow(
-                            asset: definition, price: decimalPrice, change24h: change,
-                            lastUpdated: Date()))
-                    errorCount = 0  // Reset error count on success
-                } catch {
-                    errorCount += 1
-                    let change = computeChange(for: definition.code, newPrice: nil)
-                    updatedRows.append(
-                        PriceRow(
-                            asset: definition, price: lastPrices[definition.code],
-                            change24h: change, lastUpdated: Date()))
 
-                    // Only show error and stop if too many failures
-                    if errorCount >= maxErrors {
-                        print("⚠️ Too many price fetch errors, stopping")
-                        break
+                let codes = chunk.map { $0.code }
+                do {
+                    // Batch fetch prices
+                    let prices = try await priceManager.fetchPrices(for: codes)
+
+                    for definition in chunk {
+                        if let price = prices[definition.code] {
+                            let decimalPrice = Decimal(price)
+                            let change = computeChange(for: definition.code, newPrice: decimalPrice)
+                            lastPrices[definition.code] = decimalPrice
+                            updatedRows.append(
+                                PriceRow(
+                                    asset: definition, price: decimalPrice, change24h: change,
+                                    lastUpdated: Date()))
+                        } else {
+                            // Price not found in batch result
+                            updatedRows.append(
+                                PriceRow(
+                                    asset: definition, price: lastPrices[definition.code],
+                                    change24h: nil, lastUpdated: nil))
+                        }
+                    }
+                } catch {
+                    print("⚠️ Batch fetch failed for chunk: \(error)")
+                    // Fallback for failed chunk
+                    for definition in chunk {
+                        updatedRows.append(
+                            PriceRow(
+                                asset: definition, price: lastPrices[definition.code],
+                                change24h: nil, lastUpdated: nil))
                     }
                 }
-            }
-
-            // Add remaining assets without prices
-            let remainingAssets = assets.dropFirst(50)
-            for definition in remainingAssets {
-                updatedRows.append(
-                    PriceRow(
-                        asset: definition, price: lastPrices[definition.code],
-                        change24h: nil, lastUpdated: nil))
             }
 
             await MainActor.run {
@@ -166,9 +196,7 @@ final class PricesViewModel: ObservableObject {
                 self.lastUpdated = Date()
                 self.rows = updatedRows
                 self.applyFilters()
-                print(
-                    "📊 Loaded \(updatedRows.count) assets (\(assetsSnapshot.count) with fresh prices)"
-                )
+                print("📊 Loaded \(updatedRows.count) assets via batch fetching")
             }
         }
     }
@@ -307,28 +335,31 @@ final class PricesViewModel: ObservableObject {
         Task { [weak self] in
             guard let self else { return }
 
-            // Fetch prices individually
-            for asset in assetsToUpdate {
-                if let price = try? await priceManager.price(for: asset.code) {
-                    await MainActor.run {
+            // Batch fetch prices
+            let codes = assetsToUpdate.map { $0.code }
+
+            do {
+                let prices = try await priceManager.fetchPrices(for: codes)
+
+                await MainActor.run {
+                    for (code, price) in prices {
                         let decimalPrice = Decimal(price)
-                        self.lastPrices[asset.code] = decimalPrice
+                        self.lastPrices[code] = decimalPrice
 
                         // Update rows
-                        if let index = self.rows.firstIndex(where: { $0.asset.code == asset.code })
-                        {
+                        if let index = self.rows.firstIndex(where: { $0.asset.code == code }) {
                             self.rows[index].price = decimalPrice
                             self.rows[index].change24h = self.computeChange(
-                                for: asset.code, newPrice: decimalPrice)
+                                for: code, newPrice: decimalPrice)
                             self.rows[index].lastUpdated = Date()
                         }
                     }
-                }
-            }
 
-            await MainActor.run {
-                self.lastUpdated = Date()
-                self.applyFilters()
+                    self.lastUpdated = Date()
+                    self.applyFilters()
+                }
+            } catch {
+                print("⚠️ Auto-refresh batch fetch failed: \(error)")
             }
         }
     }

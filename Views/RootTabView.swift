@@ -50,7 +50,7 @@ struct RootTabView: View {
                     PortfolioView(viewModel: dashboardVM)
                 } else {
                     VStack {
-                        Text("Loading portfolio...")
+                        Text("Loading Portfolio...")
                             .font(.title2)
                             .foregroundColor(.secondary)
                         ProgressView()
@@ -145,9 +145,9 @@ struct PlaceholderScenariosView: View {
                 Text("Scenarios")
                     .font(.largeTitle).bold()
                     .foregroundColor(.white)
-                Text("DCA simülasyonları burada olacak")
+                Text("Create and manage your DCA scenarios here.")
                     .foregroundColor(.secondary)
-                NavigationLink("Yeni Simülasyon", destination: DCAScenarioView())
+                NavigationLink("New Scenario", destination: DCAScenarioView())
                     .buttonStyle(PrimaryButtonStyle())
                     .padding(.horizontal, 24)
             }

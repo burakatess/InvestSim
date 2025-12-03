@@ -38,17 +38,14 @@ final class BinanceWebSocketProvider: NSObject, WebSocketProvider, SubscribableP
 
     // MARK: - Connection Management
     func connect() {
-        guard webSocket == nil else {
-            print("⚠️ Already connected to Binance")
-            return
-        }
+        guard webSocket == nil else { return }
 
         connectionStatePublisher.send(.connecting)
 
         // Build streams URL
-        let streams = subscribedSymbols.map { "\($0.lowercased())usdt@trade" }.joined(
-            separator: "/")
-        let urlString = streams.isEmpty ? baseURL : "\(baseURL)?streams=\(streams)"
+        // Note: URL length limit might be an issue if we subscribe to too many at once via URL.
+        // Better to connect to base URL and send SUBSCRIBE messages.
+        let urlString = baseURL
 
         guard let url = URL(string: urlString) else {
             connectionStatePublisher.send(.error(WebSocketError.invalidURL))
@@ -58,13 +55,18 @@ final class BinanceWebSocketProvider: NSObject, WebSocketProvider, SubscribableP
         webSocket = session?.webSocketTask(with: url)
         webSocket?.resume()
 
-        connectionStatePublisher.send(.connected)
+        // Note: We do NOT send .connected here. We wait for didOpen delegate.
         receiveMessage()
     }
 
     func disconnect() {
         pingTimer?.invalidate()
         pingTimer = nil
+
+        // Clear pending subscriptions
+        pendingSubscriptions.removeAll()
+        pendingUnsubscriptions.removeAll()
+        subscriptionDebounceTimer?.invalidate()
 
         webSocket?.cancel(with: .goingAway, reason: nil)
         webSocket = nil
@@ -74,23 +76,34 @@ final class BinanceWebSocketProvider: NSObject, WebSocketProvider, SubscribableP
     }
 
     // MARK: - Subscription Management
+    private var pendingSubscriptions: Set<String> = []
+    private var pendingUnsubscriptions: Set<String> = []
+    private var subscriptionDebounceTimer: Timer?
+
+    // Track if socket is actually open (handshake complete)
+    private var isSocketOpen = false
+
     func subscribe(symbols: [String]) {
         let newSymbols = symbols.filter { !subscribedSymbols.contains($0) }
         guard !newSymbols.isEmpty else { return }
 
         for symbol in newSymbols {
             subscribedSymbols.insert(symbol)
+            pendingSubscriptions.insert(symbol)
+            // If it was pending unsubscribe, remove it
+            pendingUnsubscriptions.remove(symbol)
         }
 
         // If we are already polling OR permanently switched, use polling
         if isPolling || permanentlySwitchToPolling {
-            if !isPolling { startPolling() }  // Ensure polling is started if it wasn't
-            fetchPrices()  // Fetch immediately for new symbols
+            if !isPolling { startPolling() }
+            fetchPrices()
         } else {
-            // Otherwise try WebSocket
-            connect()
-            if isConnected {
-                sendSubscription(symbols: newSymbols, isSubscribe: true)
+            // If socket not open, connect. Subscriptions will be sent in didOpen.
+            if webSocket == nil {
+                connect()
+            } else if isSocketOpen {
+                scheduleSubscriptionBatch()
             }
         }
     }
@@ -101,38 +114,72 @@ final class BinanceWebSocketProvider: NSObject, WebSocketProvider, SubscribableP
 
         for symbol in symbolsToRemove {
             subscribedSymbols.remove(symbol)
+            pendingUnsubscriptions.insert(symbol)
+            // If it was pending subscribe, remove it
+            pendingSubscriptions.remove(symbol)
         }
 
         if isPolling {
-            // If no symbols left, stop polling
             if subscribedSymbols.isEmpty {
                 stopPolling()
             }
         } else {
-            if isConnected {
-                sendSubscription(symbols: symbolsToRemove, isSubscribe: false)
+            if isSocketOpen {
+                scheduleSubscriptionBatch()
             }
         }
     }
 
+    private func scheduleSubscriptionBatch() {
+        subscriptionDebounceTimer?.invalidate()
+        subscriptionDebounceTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: false) {
+            [weak self] _ in
+            self?.flushPendingSubscriptions()
+        }
+    }
+
+    private func flushPendingSubscriptions() {
+        guard isSocketOpen else { return }
+
+        if !pendingSubscriptions.isEmpty {
+            let batch = Array(pendingSubscriptions)
+            sendSubscription(symbols: batch, isSubscribe: true)
+            pendingSubscriptions.removeAll()
+        }
+
+        if !pendingUnsubscriptions.isEmpty {
+            let batch = Array(pendingUnsubscriptions)
+            sendSubscription(symbols: batch, isSubscribe: false)
+            pendingUnsubscriptions.removeAll()
+        }
+    }
+
     private func sendSubscription(symbols: [String], isSubscribe: Bool) {
-        let method = isSubscribe ? "SUBSCRIBE" : "UNSUBSCRIBE"
-        let params = symbols.map { "\($0.lowercased())usdt@trade" }
-        let id = Int.random(in: 1...100000)
-        let message: [String: Any] = [
-            "method": method,
-            "params": params,
-            "id": id,
-        ]
+        // Binance limit: 1024 streams per connection.
+        // We should batch them in chunks if too large, but for now just send all.
+        // Also URL length limit doesn't apply to WebSocket frames, but frame size might.
+        // Chunk into 50s just to be safe.
+        let chunks = symbols.chunked(into: 50)
 
-        guard let data = try? JSONSerialization.data(withJSONObject: message),
-            let string = String(data: data, encoding: .utf8)
-        else { return }
+        for chunk in chunks {
+            let method = isSubscribe ? "SUBSCRIBE" : "UNSUBSCRIBE"
+            let params = chunk.map { "\($0.lowercased())usdt@trade" }
+            let id = Int.random(in: 1...100000)
+            let message: [String: Any] = [
+                "method": method,
+                "params": params,
+                "id": id,
+            ]
 
-        let wsMessage = URLSessionWebSocketTask.Message.string(string)
-        webSocket?.send(wsMessage) { error in
-            if let error = error {
-                print("❌ Failed to send \(method) message: \(error)")
+            guard let data = try? JSONSerialization.data(withJSONObject: message),
+                let string = String(data: data, encoding: .utf8)
+            else { continue }
+
+            let wsMessage = URLSessionWebSocketTask.Message.string(string)
+            webSocket?.send(wsMessage) { error in
+                if let error = error {
+                    print("❌ Failed to send \(method) message: \(error)")
+                }
             }
         }
     }
@@ -317,8 +364,22 @@ extension BinanceWebSocketProvider: URLSessionDelegate, URLSessionTaskDelegate {
         completionHandler(.performDefaultHandling, nil)
     }
 
+    func urlSession(
+        _ session: URLSession, webSocketTask: URLSessionWebSocketTask,
+        didOpenWithProtocol protocol: String?
+    ) {
+        print("✅ Binance WebSocket Connected")
+        isSocketOpen = true
+        connectionStatePublisher.send(.connected)
+        startPingTimer()
+
+        // Flush any pending subscriptions
+        flushPendingSubscriptions()
+    }
+
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?)
     {
+        isSocketOpen = false
         if let error = error {
             print("❌ Binance WebSocket Task Error: \(error)")
 

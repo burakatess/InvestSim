@@ -8,11 +8,11 @@ enum DateRange: String, CaseIterable, Identifiable {
     case y2 = "2Y"
     case y5 = "5Y"
     case all = "All"
-    
+
     var id: String { rawValue }
-    
+
     var title: String { rawValue }
-    
+
     var days: Int? {
         switch self {
         case .m1: return 30
@@ -36,9 +36,9 @@ enum LoadableState<T: Equatable>: Equatable {
 enum DCAFrequency: String, CaseIterable, Identifiable {
     case monthly = "monthly"
     case weekly = "weekly"
-    
+
     var id: String { rawValue }
-    
+
     var displayName: String {
         switch self {
         case .monthly: return "Aylık"
@@ -56,7 +56,7 @@ struct BannerMessage {
     enum Kind {
         case success, warning, error
     }
-    
+
     let title: String
     let message: String
     let kind: Kind
@@ -66,7 +66,7 @@ struct ToastMessage: Equatable {
     enum Kind: Equatable {
         case info, success, error
     }
-    
+
     let message: String
     let kind: Kind
 }

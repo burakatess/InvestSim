@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6655B622008F4510BB852D85 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0C82B05055E4A7F8F12B424 /* Localizable.strings */; };
 		511E0C3F113B4639817E4627 /* UserAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2878714EF38947DCAF57DB86 /* UserAsset.swift */; };
 		670BE7BC2ECDE1C20054A55D /* ScenariosHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE7BB2ECDE1C20054A55D /* ScenariosHomeView.swift */; };
 		670BE8182ECEF72A0054A55D /* AssetSyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8122ECEF72A0054A55D /* AssetSyncScheduler.swift */; };
@@ -137,6 +138,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D0C82B05055E4A7F8F12B424 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		2878714EF38947DCAF57DB86 /* UserAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAsset.swift; sourceTree = "<group>"; };
 		670BE7BB2ECDE1C20054A55D /* ScenariosHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenariosHomeView.swift; sourceTree = "<group>"; };
 		670BE8112ECEF72A0054A55D /* AssetCatalogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetCatalogManager.swift; sourceTree = "<group>"; };

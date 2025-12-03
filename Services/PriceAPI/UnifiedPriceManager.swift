@@ -36,6 +36,9 @@ final class UnifiedPriceManager {
             // Default to asset code if symbol is missing
             let symbol = asset.symbol ?? asset.code
 
+            // Map category for throttling
+            assetCategoryMap[asset.code] = asset.category
+
             // Determine provider
             let provider = asset.websocketProvider ?? asset.provider
 
@@ -85,6 +88,19 @@ final class UnifiedPriceManager {
 
     // Cache
     private var priceCache: [String: (price: Double, timestamp: Date)] = [:]
+
+    // Throttling
+    private var assetCategoryMap: [String: String] = [:]
+    private var lastUpdateTimes: [String: Date] = [:]
+
+    private func getThrottleInterval(for category: String) -> TimeInterval {
+        switch category.lowercased() {
+        case "crypto": return 5.0
+        case "forex", "currency": return 10.0
+        case "commodity", "metal", "gold": return 30.0
+        default: return 15.0  // Stocks, ETFs, etc.
+        }
+    }
 
     // Publishers
     public let priceUpdatePublisher = PassthroughSubject<PriceUpdate, Never>()
@@ -179,7 +195,26 @@ final class UnifiedPriceManager {
     }
 
     private func handlePriceUpdate(_ update: PriceUpdate) {
+        // 1. Deduplicate: Only propagate if price changed
+        if let cached = priceCache[update.assetCode], cached.price == update.price {
+            return
+        }
+
+        // 2. Throttle: Check time since last update based on category
+        let category = assetCategoryMap[update.assetCode] ?? "unknown"
+        let interval = getThrottleInterval(for: category)
+
+        if let lastUpdate = lastUpdateTimes[update.assetCode],
+            Date().timeIntervalSince(lastUpdate) < interval
+        {
+            return
+        }
+
+        // Update state
+        lastUpdateTimes[update.assetCode] = Date()
         priceCache[update.assetCode] = (update.price, Date())
+
+        // Propagate
         priceUpdatePublisher.send(update)
         print("💰 Price updated: \(update.assetCode) = \(update.price) (from \(update.source))")
     }
@@ -211,6 +246,47 @@ final class UnifiedPriceManager {
         }
 
         throw UnifiedPriceError.noProviderAvailable
+    }
+
+    /// Batch fetch prices for multiple asset codes
+    func fetchPrices(for assetCodes: [String]) async throws -> [String: Double] {
+        // 1. Check cache for all requested codes
+        var results: [String: Double] = [:]
+        var missingCodes: [String] = []
+
+        for code in assetCodes {
+            if let cached = priceCache[code], Date().timeIntervalSince(cached.timestamp) < 60 {
+                results[code] = cached.price
+            } else {
+                missingCodes.append(code)
+            }
+        }
+
+        // 2. Fetch missing from Supabase
+        if !missingCodes.isEmpty {
+            // Chunk requests to avoid URL length limits if necessary (e.g. 50 at a time)
+            let chunks = missingCodes.chunked(into: 50)
+
+            for chunk in chunks {
+                let backendPrices = try await backend.fetchPrices(for: chunk)
+                for bp in backendPrices {
+                    let price = NSDecimalNumber(decimal: bp.price).doubleValue
+                    priceCache[bp.assetCode] = (price, Date())
+                    results[bp.assetCode] = price
+
+                    // Notify listeners
+                    let update = PriceUpdate(
+                        assetCode: bp.assetCode,
+                        price: price,
+                        source: "supabase",
+                        volume: nil
+                    )
+                    priceUpdatePublisher.send(update)
+                }
+            }
+        }
+
+        return results
     }
 
     /// Fetch historical prices for an asset

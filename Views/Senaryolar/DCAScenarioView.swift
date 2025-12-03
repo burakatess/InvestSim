@@ -282,12 +282,15 @@ final class DCASimulationVM: ObservableObject {
                 if selectedDays != requiredDays {
                     let dayMessage =
                         requiredDays == 1
-                        ? "Simülasyonu başlatmak için bir gün seçmelisiniz."
-                        : "Simülasyonu başlatmak için \(requiredDays) gün seçmelisiniz."
+                        ? "You must select a day to start the simulation."
+                        : String(
+                            format: NSLocalizedString(
+                                "You must select %d days to start the simulation.", comment: ""),
+                            requiredDays)
                     errorMessage = dayMessage
                 } else {
                     errorMessage =
-                        "Simülasyonu başlatmak için dağılımın %100 ve yatırım tutarlarının pozitif olduğundan emin olun."
+                        "Ensure 100% distribution and positive investment amounts to start."
                 }
             }
         }
@@ -296,11 +299,11 @@ final class DCASimulationVM: ObservableObject {
     var primaryButtonTitle: String {
         switch simulationState {
         case .running:
-            return "Simülasyon Çalışıyor..."
+            return "Simulation Running..."
         case .completed:
-            return "Yeniden Başlat"
+            return "Restart"
         default:
-            return "Simülasyonu Başlat"
+            return "Start Simulation"
         }
     }
 
@@ -327,16 +330,16 @@ final class DCASimulationVM: ObservableObject {
     func runSimulation() {
         evaluateSimulationReadiness()
         guard simulationState == .ready else {
-            errorMessage = "Simülasyon için gerekli koşullar sağlanmadı."
+            errorMessage = "Requirements for simulation not met."
             return
         }
         guard !isRunning else { return }
         guard let priceManager else {
-            errorMessage = "Fiyat servisi hazır değil."
+            errorMessage = "Price service is not ready."
             return
         }
         guard let assetRepository else {
-            errorMessage = "Varlık bilgilerine erişilemiyor."
+            errorMessage = "Asset information unavailable."
             return
         }
 
@@ -346,7 +349,7 @@ final class DCASimulationVM: ObservableObject {
         transactions.removeAll()
 
         guard let snapshot = makeConfigSnapshot() else {
-            errorMessage = "Senaryo verileri hazırlanamadı."
+            errorMessage = "Scenario data could not be prepared."
             simulationState = .idle
             isRunning = false
             evaluateSimulationReadiness()
@@ -356,7 +359,7 @@ final class DCASimulationVM: ObservableObject {
         simulationTask?.cancel()
         isRunning = true
         simulationState = .running
-        priceLoadingMessage = "Fiyat verileri yükleniyor…"
+        priceLoadingMessage = "Loading price data..."
 
         simulationTask = Task { [weak self] in
             guard let self else { return }
@@ -379,7 +382,8 @@ final class DCASimulationVM: ObservableObject {
                 await MainActor.run {
                     self.result = simulationResult
                     self.transactions = preparedTransactions
-                    self.successMessage = "Simülasyon tamamlandı"
+                    self.successMessage = NSLocalizedString(
+                        "Simulation completed", comment: "")
                     self.isRunning = false
                     self.simulationState = .completed
                     self.lastRunConfig = snapshot
@@ -465,7 +469,7 @@ final class DCASimulationVM: ObservableObject {
         var latest: [String: Decimal] = [:]
         await MainActor.run {
             self.priceLoadingMessage =
-                "Bu varlık için geçmiş fiyat verisi indiriliyor (ilk kullanımda)."
+                "Downloading historical price data for this asset (first use)."
         }
 
         for code in uniqueCodes {
@@ -485,7 +489,9 @@ final class DCASimulationVM: ObservableObject {
             }
 
             await MainActor.run {
-                self.priceLoadingMessage = "Fiyat verisi alınıyor… \(definition.displayName)"
+                self.priceLoadingMessage = String(
+                    format: "Loading price data... %@",
+                    definition.displayName)
             }
 
             let series = try await priceManager.historicalPrices(
@@ -638,13 +644,18 @@ private enum SimulationPreparationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingAssetDefinition(let code):
-            return "Varlık kaydı bulunamadı: \(code)"
+            return String(
+                format: "Asset record not found: %@", code)
         case .unsupportedProvider(let name):
-            return "\(name) için veri sağlayıcısı henüz desteklenmiyor."
+            return String(
+                format: "Data provider for %@ is not supported yet.", name
+            )
         case .missingIdentifier(let name):
-            return "\(name) için CoinGecko kimliği tanımlanmadı."
+            return String(
+                format: "CoinGecko ID not defined for %@.", name)
         case .historicalDataUnavailable(let name):
-            return "\(name) için fiyat geçmişi bulunamadı."
+            return String(
+                format: "Historical price data not found for %@.", name)
         }
     }
 }

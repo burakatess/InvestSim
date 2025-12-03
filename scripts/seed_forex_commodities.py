@@ -46,8 +46,12 @@ COMMODITIES = [
     {"code": "XAGUSD", "name": "Silver / US Dollar", "provider": "goldapi", "symbol": "XAG/USD"},
     {"code": "XPTUSD", "name": "Platinum / US Dollar", "provider": "goldapi", "symbol": "XPT/USD"},
     {"code": "XPDUSD", "name": "Palladium / US Dollar", "provider": "goldapi", "symbol": "XPD/USD"},
-    # Oil & Gas usually via Tiingo or other providers as tickers like USO, OIL, or futures
-    # For simplicity in this version, we stick to Precious Metals supported by GoldAPI
+    
+    # Energy & Metals (Yahoo Finance)
+    {"code": "CL=F", "name": "Crude Oil", "provider": "yahoo", "symbol": "CL=F"},
+    {"code": "BZ=F", "name": "Brent Crude Oil", "provider": "yahoo", "symbol": "BZ=F"},
+    {"code": "NG=F", "name": "Natural Gas", "provider": "yahoo", "symbol": "NG=F"},
+    {"code": "HG=F", "name": "Copper", "provider": "yahoo", "symbol": "HG=F"}
 ]
 
 def transform_forex(item):

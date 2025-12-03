@@ -92,7 +92,7 @@ extension PlansHomeView {
     fileprivate var loadingOverlay: some View {
         Group {
             if viewModel.isLoading {
-                ProgressView("Planlar yükleniyor...")
+                ProgressView("plans_loading")
                     .padding(24)
                     .background(
                         LinearGradient(
@@ -114,12 +114,16 @@ extension PlansHomeView {
 
     fileprivate var headerSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Hatırlatıcı Takvimi")
+            Text("Calendar")
                 .font(.title2.bold())
                 .foregroundColor(PlansColors.textPrimary)
             HStack {
-                summaryCard(title: "Aktif Plan", value: "\(viewModel.activePlanCount)")
-                summaryCard(title: "Sıradaki", value: viewModel.nextReminderText)
+                summaryCard(
+                    title: NSLocalizedString("Active Plans", comment: ""),
+                    value: "\(viewModel.activePlanCount)")
+                summaryCard(
+                    title: NSLocalizedString("Next", comment: ""),
+                    value: viewModel.nextReminderText)
             }
         }
     }
@@ -211,16 +215,20 @@ extension PlansHomeView {
                     .contextMenu {
                         let dayPlans = viewModel.plans(on: day.date)
                         if dayPlans.isEmpty {
-                            Text("Bu gün için plan yok")
+                            Text("No plan for today")
                         } else {
                             ForEach(dayPlans) { plan in
-                                Button("\(plan.title) - Düzenle") {
+                                Button(
+                                    "\(plan.title) - \(NSLocalizedString("common_edit", comment: ""))"
+                                ) {
                                     editorMode = .edit(plan, viewModel.makeInput(from: plan))
                                 }
                                 Button(role: .destructive) {
                                     viewModel.delete(plan: plan)
                                 } label: {
-                                    Text("\(plan.title) - Sil")
+                                    Text(
+                                        "\(plan.title) - \(NSLocalizedString("common_delete", comment: ""))"
+                                    )
                                 }
                             }
                         }
@@ -253,7 +261,7 @@ extension PlansHomeView {
                     .foregroundColor(PlansColors.textPrimary)
                 Spacer()
                 if plansForDay.isEmpty {
-                    Button("Plan Oluştur") {
+                    Button("Create Plan") {
                         editorMode = .create(
                             viewModel.makeDefaultInput(for: viewModel.selectedDate))
                     }
@@ -262,7 +270,7 @@ extension PlansHomeView {
                 }
             }
             if plansForDay.isEmpty {
-                Text("Bu gün için plan bulunmuyor.")
+                Text("No plan for today")
                     .font(.footnote)
                     .foregroundColor(PlansColors.textSecondary)
             } else {
@@ -277,7 +285,7 @@ extension PlansHomeView {
                                 .foregroundColor(PlansColors.textSecondary)
                         }
                         Spacer()
-                        Button("Edit") {
+                        Button("common_edit") {
                             editorMode = .edit(plan, viewModel.makeInput(from: plan))
                         }
                         .buttonStyle(.bordered)
@@ -305,7 +313,7 @@ extension PlansHomeView {
     fileprivate var remindersSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Hatırlatmalar")
+                Text("Reminders")
                     .font(.headline)
                     .foregroundColor(PlansColors.textPrimary)
                 Spacer()
@@ -318,7 +326,7 @@ extension PlansHomeView {
                     Image(systemName: "bell.slash")
                         .font(.system(size: 28))
                         .foregroundColor(PlansColors.textSecondary)
-                    Text("Bu gün için planlanmış hatırlatma yok")
+                    Text("No reminders today")
                         .font(.subheadline)
                         .foregroundColor(PlansColors.textSecondary)
                 }
@@ -341,14 +349,14 @@ extension PlansHomeView {
                     ForEach(viewModel.reminders) { reminder in
                         reminderRow(reminder)
                             .contextMenu {
-                                Button("Planı Düzenle") {
+                                Button("plans_edit_plan") {
                                     editorMode = .edit(
                                         reminder.plan, viewModel.makeInput(from: reminder.plan))
                                 }
                                 Button(role: .destructive) {
                                     viewModel.delete(plan: reminder.plan)
                                 } label: {
-                                    Text("Planı Sil")
+                                    Text("plans_delete_plan")
                                 }
                             }
                     }
@@ -387,12 +395,12 @@ extension PlansHomeView {
                 .font(.caption)
                 .foregroundColor(PlansColors.textSecondary)
                 Spacer()
-                Button("Tamamlandı") {
+                Button("plans_completed") {
                     viewModel.complete(reminder)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(PlansColors.success)
-                Button("Ertele") {
+                Button("plans_snooze") {
                     viewModel.skip(reminder)
                 }
                 .buttonStyle(.bordered)
@@ -416,11 +424,11 @@ extension PlansHomeView {
 
     fileprivate var historySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Son Tamamlananlar")
+            Text("Recently Completed")
                 .font(.headline)
                 .foregroundColor(PlansColors.textPrimary)
             if viewModel.history.isEmpty {
-                Text("Henüz tamamlanmış plan yok.")
+                Text("No completed plans yet")
                     .font(.subheadline)
                     .foregroundColor(PlansColors.textSecondary)
             } else {
@@ -492,8 +500,8 @@ private enum PlanEditorMode: Identifiable {
     }
     var title: String {
         switch self {
-        case .create: return "Yeni Plan"
-        case .edit: return "Planı Düzenle"
+        case .create: return NSLocalizedString("Create Plan", comment: "")
+        case .edit: return NSLocalizedString("plans_edit_plan", comment: "")
         }
     }
     var initialInput: PlansViewModel.PlanCreationInput {
@@ -560,9 +568,9 @@ private struct PlanEditorSheet: View {
 
                 ScrollView {
                     VStack(spacing: 20) {
-                        sectionCard(title: "Plan Bilgileri") {
-                            labeledField("Plan Adı") {
-                                TextField("Plan Adı", text: $titleText)
+                        sectionCard(title: NSLocalizedString("Plan Details", comment: "")) {
+                            labeledField(NSLocalizedString("Plan Name", comment: "")) {
+                                TextField("Plan Name", text: $titleText)
                                     .padding(12)
                                     .background(fieldBackground)
                                     .overlay(fieldOverlay)
@@ -573,7 +581,7 @@ private struct PlanEditorSheet: View {
                                 showingAssetPicker = true
                             } label: {
                                 HStack {
-                                    Text("Varlık")
+                                    Text("Asset")
                                         .foregroundColor(PlansColors.textSecondary)
                                     Spacer()
                                     Text(selectedAssetDisplayName)
@@ -587,7 +595,7 @@ private struct PlanEditorSheet: View {
                             }
                             .disabled(assets.isEmpty)
 
-                            labeledField("Miktar") {
+                            labeledField(NSLocalizedString("Amount", comment: "")) {
                                 TextField("0,00", text: $amountText)
                                     .keyboardType(.decimalPad)
                                     .padding(12)
@@ -596,17 +604,18 @@ private struct PlanEditorSheet: View {
                                     .foregroundColor(PlansColors.textPrimary)
                             }
 
-                            Picker("Birim", selection: $amountUnit) {
-                                ForEach(["gram", "adet", "TRY"], id: \.self) { unit in
-                                    Text(unit.capitalized).tag(unit)
-                                }
+                            Picker("Unit", selection: $amountUnit) {
+                                Text("Gram").tag("gram")
+                                Text("Piece").tag("adet")
+                                Text("Currency").tag("TRY")
                             }
+
                             .pickerStyle(.segmented)
                             .colorMultiply(PlansColors.accent)
                         }
 
-                        sectionCard(title: "Zamanlama") {
-                            Picker("Sıklık", selection: $frequency) {
+                        sectionCard(title: NSLocalizedString("Schedule", comment: "")) {
+                            Picker("Frequency", selection: $frequency) {
                                 ForEach(DCAFrequency.allCases, id: \.self) { freq in
                                     Text(freq.displayName).tag(freq)
                                 }
@@ -616,11 +625,15 @@ private struct PlanEditorSheet: View {
 
                             if frequency == .monthly {
                                 Stepper(value: $dayOfMonth, in: 1...28) {
-                                    Text("Ayın \(dayOfMonth). günü")
-                                        .foregroundColor(PlansColors.textPrimary)
+                                    Text(
+                                        String(
+                                            format: NSLocalizedString(
+                                                "plans_day_of_month", comment: ""), dayOfMonth)
+                                    )
+                                    .foregroundColor(PlansColors.textPrimary)
                                 }
                             } else {
-                                Picker("Gün", selection: $weekday) {
+                                Picker("Day", selection: $weekday) {
                                     ForEach(1...7, id: \.self) { day in
                                         Text(weekdayName(day)).tag(day)
                                     }
@@ -630,16 +643,18 @@ private struct PlanEditorSheet: View {
                             }
                         }
 
-                        sectionCard(title: "Hatırlatmalar") {
-                            Toggle("3 gün önce hatırlatma", isOn: $includeMinusThree)
+                        sectionCard(
+                            title: NSLocalizedString("Reminders", comment: "")
+                        ) {
+                            Toggle("3 Days Before", isOn: $includeMinusThree)
                                 .toggleStyle(SwitchToggleStyle(tint: PlansColors.accent))
                                 .foregroundColor(PlansColors.textPrimary)
-                            Toggle("1 gün önce hatırlatma", isOn: $includeMinusOne)
+                            Toggle("1 Day Before", isOn: $includeMinusOne)
                                 .toggleStyle(SwitchToggleStyle(tint: PlansColors.accent))
                                 .foregroundColor(PlansColors.textPrimary)
                             if !extraOffsets.isEmpty {
                                 Text(
-                                    "Ek hatırlatmalar: \(extraOffsets.map(String.init).joined(separator: ", "))"
+                                    "\(NSLocalizedString("plans_extra_reminders", comment: "")): \(extraOffsets.map(String.init).joined(separator: ", "))"
                                 )
                                 .font(.footnote)
                                 .foregroundColor(PlansColors.textSecondary)
@@ -654,7 +669,7 @@ private struct PlanEditorSheet: View {
                         }
 
                         Button(action: handleSave) {
-                            Text("Kaydet")
+                            Text("Save")
                                 .font(.headline)
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
@@ -681,7 +696,7 @@ private struct PlanEditorSheet: View {
                                 onDelete()
                                 dismiss()
                             } label: {
-                                Text("Planı Sil")
+                                Text("plans_delete_plan")
                                     .frame(maxWidth: .infinity)
                                     .padding()
                             }
@@ -769,7 +784,7 @@ private struct PlanEditorSheet: View {
     private func handleSave() {
         guard let amount = Decimal(string: amountText.replacingOccurrences(of: ",", with: "."))
         else {
-            errorMessage = "Geçerli miktar girin"
+            errorMessage = NSLocalizedString("Enter a valid amount", comment: "")
             return
         }
         var offsets = extraOffsets

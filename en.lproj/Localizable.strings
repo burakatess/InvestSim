@@ -1,0 +1,74 @@
+/* Portfolio */
+"portfolio_main_title" = "Main Portfolio";
+"portfolio_loading" = "Loading portfolio...";
+
+/* Plans */
+"plans_title" = "Plans";
+"plans_calendar_title" = "Reminder Calendar";
+"plans_active_plan" = "Active Plans";
+"plans_next" = "Next";
+"plans_no_plan_today" = "No plan for today.";
+"plans_create_button" = "Create Plan";
+"plans_loading" = "Loading plans...";
+"plans_reminders_title" = "Reminders";
+"plans_no_reminders_today" = "No reminders scheduled for today";
+"plans_edit_plan" = "Edit Plan";
+"plans_delete_plan" = "Delete Plan";
+"plans_completed" = "Completed";
+"plans_snooze" = "Snooze";
+"plans_recent_completed" = "Recently Completed";
+"plans_no_completed_history" = "No completed plans yet.";
+"plans_details_title" = "Plan Details";
+"plans_name_label" = "Plan Name";
+"plans_asset_label" = "Asset";
+"plans_amount_label" = "Amount";
+"plans_unit_label" = "Unit";
+"plans_schedule_title" = "Schedule";
+"plans_frequency_label" = "Frequency";
+"plans_day_label" = "Day";
+"plans_reminders_section" = "Reminders";
+"plans_reminder_3_days" = "Reminder 3 days before";
+"plans_reminder_1_day" = "Reminder 1 day before";
+"plans_extra_reminders" = "Extra reminders";
+"plans_save_button" = "Save";
+"plans_error_invalid_amount" = "Enter a valid amount";
+"plans_unit_gram" = "Gram";
+"plans_unit_piece" = "Piece";
+"plans_unit_currency" = "Currency";
+"plans_day_of_month" = "%d. day of month";
+
+/* Scenarios */
+"scenarios_title" = "Simulation Settings";
+"scenarios_placeholder_title" = "Scenarios";
+"scenarios_placeholder_desc" = "DCA simulations will be here";
+"scenarios_new_button" = "New Simulation";
+"scenarios_start_simulation" = "Start Simulation";
+"scenarios_restart_simulation" = "Restart";
+"scenarios_simulation_running" = "Simulation Running...";
+"scenarios_error_day_selection" = "You must select a day to start the simulation.";
+"scenarios_error_conditions" = "Ensure 100% distribution and positive investment amounts to start.";
+"scenarios_error_requirements" = "Requirements for simulation not met.";
+"scenarios_error_price_service" = "Price service is not ready.";
+"scenarios_error_asset_info" = "Asset information unavailable.";
+"scenarios_error_scenario_data" = "Scenario data could not be prepared.";
+"scenarios_loading_prices" = "Loading price data...";
+"scenarios_success_complete" = "Simulation completed";
+"scenarios_downloading_history" = "Downloading historical price data for this asset (first use).";
+"scenarios_error_asset_not_found" = "Asset record not found: %@";
+"scenarios_error_unsupported_provider" = "Data provider for %@ is not supported yet.";
+"scenarios_error_missing_id" = "CoinGecko ID not defined for %@.";
+"scenarios_error_no_history" = "Historical price data not found for %@.";
+
+/* Common */
+"common_ok" = "OK";
+"common_cancel" = "Cancel";
+"common_close" = "Close";
+"common_error" = "Error";
+"common_save" = "Save";
+"common_delete" = "Delete";
+"common_edit" = "Edit";
+
+"scenarios_error_day_selection_count" = "You must select %d days to start the simulation.";
+"scenarios_loading_prices_asset" = "Loading price data... %@";
+
+"common_unknown" = "Unknown";

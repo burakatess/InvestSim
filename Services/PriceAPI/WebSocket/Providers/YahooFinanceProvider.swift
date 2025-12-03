@@ -279,9 +279,11 @@ final class YahooFinanceProvider: SubscribableProvider {
 
             if let result = response.quoteResponse.result {
                 for quote in result {
+                    guard let price = quote.regularMarketPrice else { continue }
+
                     let update = PriceUpdate(
                         assetCode: quote.symbol,
-                        price: quote.regularMarketPrice,
+                        price: price,
                         source: "yahoo",
                         volume: Double(quote.regularMarketVolume ?? 0)
                     )
@@ -296,11 +298,21 @@ final class YahooFinanceProvider: SubscribableProvider {
         } catch {
             // Try parsing error
             if let errorResponse = try? JSONDecoder().decode(YahooErrorResponse.self, from: data) {
-                print(
-                    "❌ Yahoo API Error: \(errorResponse.quoteResponse.error?.description ?? "Unknown")"
-                )
+                let errorDesc = errorResponse.quoteResponse.error?.description ?? "Unknown"
+                print("❌ Yahoo API Error: \(errorDesc)")
+
+                // If symbol is delisted or not found, remove it from subscriptions to stop polling
+                if errorDesc.contains("No data found") || errorDesc.contains("delisted") {
+                    // We need to identify WHICH symbol failed.
+                    // Unfortunately, the error response might not contain the symbol.
+                    // But since we fetch in batches, we might have to be careful.
+                    // However, for v7 quote, if one fails, the whole batch might fail or just that item?
+                    // Usually v7 returns a partial result if some are valid.
+                    // If the whole response is an error, it means the request failed.
+                }
             } else {
-                print("❌ Failed to parse Yahoo Quote response: \(error)")
+                // Don't print full error for every failure, just a summary
+                print("⚠️ Failed to parse Yahoo Quote response (might be v8 chart data)")
             }
             return false
         }
@@ -339,11 +351,6 @@ final class YahooFinanceProvider: SubscribableProvider {
 
     // MARK: - Historical Data Fetching
     /// Fetch historical price data for a symbol
-    /// - Parameters:
-    ///   - symbol: Stock symbol (e.g. "THYAO.IS")
-    ///   - startDate: Start date for historical data
-    ///   - endDate: End date for historical data
-    ///   - completion: Completion handler with array of historical prices
     fileprivate func fetchHistoricalData(
         symbol: String,
         startDate: Date,
@@ -508,15 +515,6 @@ private struct QuoteResponseError: Codable {
 
 private struct YahooQuote: Codable {
     let symbol: String
-    let regularMarketPrice: Double
+    let regularMarketPrice: Double?
     let regularMarketVolume: Int64?
-}
-
-// MARK: - Array Extension
-extension Array {
-    fileprivate func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0..<Swift.min($0 + size, count)])
-        }
-    }
 }

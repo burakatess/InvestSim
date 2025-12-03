@@ -28,16 +28,16 @@ public enum AssetType: String, Codable, CaseIterable {
     }
 }
 
-public enum AssetProviderType: String, Codable {
-    case coingecko
-    case yahoo
-    // case tefas // Removed for US market
-    case local
-    case unknown
-    case binance
-    case tiingo
-    case goldapi
-    case alpaca
+public enum AssetProviderType: String, Codable, CaseIterable {
+    case unknown = "unknown"
+    case yahoo = "yahoo"
+    case binance = "binance"
+    case tiingo = "tiingo"
+    case goldapi = "goldapi"
+    case alpaca = "alpaca"
+    case tefas = "tefas"
+    case coingecko = "coingecko"
+    case local = "local"
 }
 
 public struct AssetCode: Hashable, Codable, RawRepresentable, ExpressibleByStringLiteral,
