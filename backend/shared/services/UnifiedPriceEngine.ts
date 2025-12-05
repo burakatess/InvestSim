@@ -8,7 +8,6 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import type { Asset, LatestPrice, OHLCV, HistoryRange } from '../types/index.ts';
 import { binanceProvider } from '../providers/BinanceProvider.ts';
 import { yahooProvider } from '../providers/YahooProvider.ts';
-import { finnhubProvider } from '../providers/FinnhubProvider.ts';
 import { alphaVantageProvider } from '../providers/AlphaVantageProvider.ts';
 
 export class UnifiedPriceEngine {
@@ -20,12 +19,11 @@ export class UnifiedPriceEngine {
 
         // Register providers
         this.providers.set('binance', binanceProvider);
-        this.providers.set('finnhub', finnhubProvider);
-        // Use Finnhub for stocks and ETFs (replacing Yahoo)
-        this.providers.set('yahoo', finnhubProvider);
-        this.providers.set('tiingo', finnhubProvider);
-        // Use AlphaVantage for commodities (metals, oil, gas)
-        this.providers.set('goldapi', alphaVantageProvider);
+        // Yahoo for stocks, ETFs, forex, metals (batch API = scalable)
+        this.providers.set('yahoo', yahooProvider);
+        this.providers.set('finnhub', yahooProvider); // Fallback to Yahoo
+        this.providers.set('tiingo', yahooProvider);
+        this.providers.set('goldapi', yahooProvider);
         this.providers.set('alphavantage', alphaVantageProvider);
     }
 

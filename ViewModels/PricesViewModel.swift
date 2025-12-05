@@ -82,8 +82,8 @@ final class PricesViewModel: ObservableObject {
     }
 
     private func setupUpdateFlushTimer() {
-        // Flush buffered updates every 1 second to prevent UI freezing
-        Timer.publish(every: 1.0, on: .main, in: .common)
+        // Flush buffered updates every 0.5 second (faster updates)
+        Timer.publish(every: 0.5, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
                 self?.flushUpdates()
@@ -92,7 +92,6 @@ final class PricesViewModel: ObservableObject {
     }
 
     private func handleRealtimeUpdate(_ update: PriceUpdate) {
-        // Buffer the update instead of applying immediately
         pendingUpdates[update.assetCode] = Decimal(update.price)
     }
 
@@ -102,11 +101,28 @@ final class PricesViewModel: ObservableObject {
         let updates = pendingUpdates
         pendingUpdates.removeAll()
 
-        // Apply all buffered updates in a single pass
+        // Apply updates efficiently without triggering full resort/filter
+        var needsSort = false
+
+        // Update filtered rows (visible items)
+        for i in 0..<filteredRows.count {
+            let code = filteredRows[i].asset.code
+            if let price = updates[code] {
+                filteredRows[i].price = price
+                filteredRows[i].change24h = computeChange(for: code, newPrice: price)
+                filteredRows[i].lastUpdated = Date()
+
+                // Only resort if sorting by price/change
+                if sortOption != .nameAZ && sortOption != .nameZA {
+                    needsSort = true
+                }
+            }
+        }
+
+        // Update source of truth (rows) in background if possible, or just update matching
+        // We iterate source rows only to keep them in sync
         for (code, price) in updates {
             lastPrices[code] = price
-
-            // Update main rows
             if let index = rows.firstIndex(where: { $0.asset.code == code }) {
                 rows[index].price = price
                 rows[index].change24h = computeChange(for: code, newPrice: price)
@@ -114,14 +130,9 @@ final class PricesViewModel: ObservableObject {
             }
         }
 
-        // Update filtered rows directly
-        for i in 0..<filteredRows.count {
-            let code = filteredRows[i].asset.code
-            if let price = updates[code] {
-                filteredRows[i].price = price
-                filteredRows[i].change24h = computeChange(for: code, newPrice: price)
-                filteredRows[i].lastUpdated = Date()
-            }
+        // Only re-apply filters if order might have changed
+        if needsSort {
+            applyFilters()
         }
 
         lastUpdated = Date()
@@ -284,8 +295,8 @@ final class PricesViewModel: ObservableObject {
     }
 
     private func setupAutoRefreshTimer() {
-        // Check for updates every 1 second
-        autoRefreshCancellable = Timer.publish(every: 1, on: .main, in: .common)
+        // Check for updates every 5 seconds (matched with flush timer)
+        autoRefreshCancellable = Timer.publish(every: 5, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] (_: Date) in
                 self?.refreshVisiblePrices()

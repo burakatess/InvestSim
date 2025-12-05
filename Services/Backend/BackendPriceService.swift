@@ -86,6 +86,10 @@ class BackendPriceService {
     // Debounce flag to prevent concurrent fetch floods
     private var isFetching = false
 
+    // Memory Cache
+    private var priceCache: [String: (price: BackendPrice, timestamp: Date)] = [:]
+    private let cacheTTL: TimeInterval = 15.0  // 15 seconds in-memory cache
+
     private init() {
         // Load from environment or config
         self.functionsBaseURL =
@@ -102,8 +106,8 @@ class BackendPriceService {
         )
 
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 45  // Increased timeout for larger batches
-        config.requestCachePolicy = .reloadIgnoringLocalCacheData
+        config.timeoutIntervalForRequest = 30
+        config.requestCachePolicy = .returnCacheDataElseLoad
         self.session = URLSession(configuration: config)
 
         self.decoder = JSONDecoder()
@@ -126,20 +130,41 @@ class BackendPriceService {
         isFetching = true
         defer { isFetching = false }
 
-        // STEP 1: Try direct database read (super fast ~200ms)
-        var allPrices: [BackendPrice] = []
+        // STEP 1: Check Memory Cache
+        let now = Date()
+        var codesToFetch: [String] = []
+
+        for code in codes {
+            if let cached = priceCache[code], now.timeIntervalSince(cached.timestamp) < cacheTTL {
+                allPrices.append(cached.price)
+            } else {
+                codesToFetch.append(code)
+            }
+        }
+
+        if allPrices.count == codes.count {
+            // All cached!
+            return allPrices
+        }
+
+        // STEP 2: Try direct database read for missing codes
         var missingCodes: [String] = []
 
         do {
-            let dbPrices = try await fetchFromDatabase(codes: codes)
-            allPrices.append(contentsOf: dbPrices)
+            let dbPrices = try await fetchFromDatabase(codes: codesToFetch)
+
+            // Update cache and result
+            for price in dbPrices {
+                priceCache[price.assetCode] = (price, Date())
+                allPrices.append(price)
+            }
 
             // Find which codes are missing from DB
             let foundCodes = Set(dbPrices.map { $0.assetCode })
-            missingCodes = codes.filter { !foundCodes.contains($0) }
+            missingCodes = codesToFetch.filter { !foundCodes.contains($0) }
 
             if !dbPrices.isEmpty {
-                print("⚡ Loaded \(dbPrices.count) prices from database (fast path)")
+                print("⚡ Loaded \(dbPrices.count) prices from database")
             }
         } catch {
             print("⚠️ Database read failed: \(error.localizedDescription)")
