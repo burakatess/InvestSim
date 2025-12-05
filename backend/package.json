@@ -1,0 +1,30 @@
+{
+    "name": "investment-backend",
+    "version": "1.0.0",
+    "description": "Production backend for investment portfolio app",
+    "type": "module",
+    "scripts": {
+        "dev": "supabase functions serve",
+        "deploy": "npm run deploy:functions && npm run deploy:cron",
+        "deploy:functions": "supabase functions deploy get-price && supabase functions deploy get-batch-prices && supabase functions deploy get-history && supabase functions deploy refresh-prices",
+        "deploy:cron": "psql $DATABASE_URL -f scripts/setup_cron.sql",
+        "db:push": "supabase db push",
+        "db:reset": "supabase db reset",
+        "db:diff": "supabase db diff",
+        "test": "deno test --allow-all",
+        "lint": "deno lint",
+        "format": "deno fmt"
+    },
+    "keywords": [
+        "investment",
+        "portfolio",
+        "prices",
+        "supabase",
+        "edge-functions"
+    ],
+    "author": "",
+    "license": "MIT",
+    "devDependencies": {
+        "@supabase/supabase-js": "^2.38.0"
+    }
+}

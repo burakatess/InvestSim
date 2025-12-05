@@ -23,6 +23,10 @@ final class DashboardVM: ObservableObject {
     // Reentrancy guard
     private var isAddingAssetInFlight: Bool = false
 
+    // Throttling
+    private var pendingUpdates: [String: Double] = [:]
+    private var updateTimer: Timer?
+
     // Computed properties for UI
     var totalValue: Double {
         userAssets.reduce(0) { runningTotal, asset in
@@ -70,46 +74,23 @@ final class DashboardVM: ObservableObject {
 
         // Subscribe to portfolio changes
         setupPortfolioSubscription()
+
+        // Setup throttling timer
+        setupUpdateTimer()
     }
 
     deinit {
+        updateTimer?.invalidate()
         cancellables.removeAll()
         print("🧹 DashboardVM deinit - Subscriptions temizlendi")
     }
 
-    // MARK: - Unified Price Observer
-    private func setupUnifiedPriceObserver() {
-        // Listen for price updates from UnifiedPriceManager
-        priceManager.priceUpdatePublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                Task {
-                    await self?.handlePriceUpdate()
-                }
+    private func setupUpdateTimer() {
+        // Update UI at most once per second
+        updateTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.flushUpdates()
             }
-            .store(in: &cancellables)
-    }
-
-    private func handlePriceUpdate() async {
-        // Update current prices for all assets
-        var needsRecalculation = false
-
-        for index in userAssets.indices {
-            let asset = userAssets[index]
-            if let definition = container.assetRepository.fetch(byCode: asset.asset.rawValue) {
-                if let newPrice = try? await priceManager.price(for: definition.code) {
-                    if abs(userAssets[index].currentPrice - newPrice) > 0.000001 {
-                        userAssets[index].currentPrice = newPrice
-                        needsRecalculation = true
-                    }
-                }
-            }
-        }
-
-        if needsRecalculation {
-            recalculateDashboard()
-            lastUpdateTime = Date()
-            objectWillChange.send()
         }
     }
 
@@ -164,6 +145,10 @@ final class DashboardVM: ObservableObject {
         print("📊 Yüklenen varlık sayısı: \(userAssets.count)")
         print("📊 Yüklenen işlem sayısı: \(recentTrades.count)")
 
+        // Subscribe to assets for price updates
+        let assetCodes = userAssets.map { $0.asset.rawValue }
+        priceManager.subscribe(to: assetCodes)
+
         // Update UI
         objectWillChange.send()
     }
@@ -200,18 +185,60 @@ final class DashboardVM: ObservableObject {
     }
 
     // MARK: - WebSocket Price Updates
+    // MARK: - WebSocket Price Updates
     private func setupWebSocketSubscription() {
         // Subscribe to UnifiedPriceManager's price updates
         priceManager.priceUpdatePublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                Task { @MainActor in
-                    await self?.updatePrices()
-                }
+            .sink { [weak self] update in
+                self?.handleRealtimeUpdate(update)
             }
             .store(in: &cancellables)
 
         print("📡 DashboardVM subscribed to WebSocket price updates")
+    }
+
+    private func handleRealtimeUpdate(_ update: PriceUpdate) {
+        // Buffer the update
+        pendingUpdates[update.assetCode] = update.price
+    }
+
+    private func flushUpdates() {
+        guard !pendingUpdates.isEmpty else { return }
+
+        let updates = pendingUpdates
+        pendingUpdates.removeAll()
+
+        var needsRecalculation = false
+
+        // Update assets with buffered prices
+        for index in userAssets.indices {
+            let assetCode = userAssets[index].asset.rawValue
+            // Check if we have an update for this asset directly
+            if let newPrice = updates[assetCode] {
+                if abs(userAssets[index].currentPrice - newPrice) > 0.000001 {
+                    userAssets[index].currentPrice = newPrice
+                    needsRecalculation = true
+                }
+            } else {
+                // Also check if we have the definition code (e.g. "BTC" vs "binance:BTC")
+                // This is a simplification, ideally we map correctly
+                if let definition = container.assetRepository.fetch(byCode: assetCode),
+                    let newPrice = updates[definition.code]
+                {
+                    if abs(userAssets[index].currentPrice - newPrice) > 0.000001 {
+                        userAssets[index].currentPrice = newPrice
+                        needsRecalculation = true
+                    }
+                }
+            }
+        }
+
+        if needsRecalculation {
+            recalculateDashboard()
+            lastUpdateTime = Date()
+            objectWillChange.send()
+        }
     }
 
     // MARK: - Public Methods
@@ -688,6 +715,7 @@ extension DashboardVM {
     }
 
     func cleanup() {
+        updateTimer?.invalidate()
         cancellables.removeAll()
         print("🧹 DashboardVM cleanup çağrıldı")
     }

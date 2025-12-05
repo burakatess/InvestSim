@@ -1,0 +1,15 @@
+-- Migration: Fix FX Assets to USD pairs
+-- Description: Replace existing FX assets with USD-based pairs as requested by user
+
+-- 1. Delete existing FX assets
+DELETE FROM assets WHERE type = 'fx';
+
+-- 2. Insert new FX assets (USD based)
+INSERT INTO assets (symbol, name, type, provider_id, currency, code) VALUES
+('EURUSD', 'Euro / US Dollar', 'fx', 'EURUSD', 'USD', 'EURUSD'),
+('GBPUSD', 'British Pound / US Dollar', 'fx', 'GBPUSD', 'USD', 'GBPUSD'),
+('TRYUSD', 'Turkish Lira / US Dollar', 'fx', 'TRYUSD', 'USD', 'TRYUSD'),
+('JPYUSD', 'Japanese Yen / US Dollar', 'fx', 'JPYUSD', 'USD', 'JPYUSD'),
+('AUDUSD', 'Australian Dollar / US Dollar', 'fx', 'AUDUSD', 'USD', 'AUDUSD'),
+('CHFUSD', 'Swiss Franc / US Dollar', 'fx', 'CHFUSD', 'USD', 'CHFUSD'),
+('CADUSD', 'Canadian Dollar / US Dollar', 'fx', 'CADUSD', 'USD', 'CADUSD');

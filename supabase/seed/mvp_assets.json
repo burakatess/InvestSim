@@ -1,0 +1,452 @@
+{
+    "assets": [
+        {
+            "symbol": "BTCUSDT",
+            "name": "Bitcoin",
+            "type": "crypto",
+            "provider_id": "BTCUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "ETHUSDT",
+            "name": "Ethereum",
+            "type": "crypto",
+            "provider_id": "ETHUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "SOLUSDT",
+            "name": "Solana",
+            "type": "crypto",
+            "provider_id": "SOLUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "TONUSDT",
+            "name": "Toncoin",
+            "type": "crypto",
+            "provider_id": "TONUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "XRPUSDT",
+            "name": "Ripple",
+            "type": "crypto",
+            "provider_id": "XRPUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "ADAUSDT",
+            "name": "Cardano",
+            "type": "crypto",
+            "provider_id": "ADAUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "AVAXUSDT",
+            "name": "Avalanche",
+            "type": "crypto",
+            "provider_id": "AVAXUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "DOTUSDT",
+            "name": "Polkadot",
+            "type": "crypto",
+            "provider_id": "DOTUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "DOGEUSDT",
+            "name": "Dogecoin",
+            "type": "crypto",
+            "provider_id": "DOGEUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "MATICUSDT",
+            "name": "Polygon",
+            "type": "crypto",
+            "provider_id": "MATICUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "ATOMUSDT",
+            "name": "Cosmos",
+            "type": "crypto",
+            "provider_id": "ATOMUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "LINKUSDT",
+            "name": "Chainlink",
+            "type": "crypto",
+            "provider_id": "LINKUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "TRXUSDT",
+            "name": "TRON",
+            "type": "crypto",
+            "provider_id": "TRXUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "BNBUSDT",
+            "name": "BNB",
+            "type": "crypto",
+            "provider_id": "BNBUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "OPUSDT",
+            "name": "Optimism",
+            "type": "crypto",
+            "provider_id": "OPUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "ARBUSDT",
+            "name": "Arbitrum",
+            "type": "crypto",
+            "provider_id": "ARBUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "AAVEUSDT",
+            "name": "Aave",
+            "type": "crypto",
+            "provider_id": "AAVEUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "SUIUSDT",
+            "name": "Sui",
+            "type": "crypto",
+            "provider_id": "SUIUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "NEARUSDT",
+            "name": "NEAR Protocol",
+            "type": "crypto",
+            "provider_id": "NEARUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "INJUSDT",
+            "name": "Injective",
+            "type": "crypto",
+            "provider_id": "INJUSDT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "AAPL",
+            "name": "Apple Inc.",
+            "type": "stock",
+            "provider_id": "AAPL",
+            "currency": "USD"
+        },
+        {
+            "symbol": "MSFT",
+            "name": "Microsoft Corporation",
+            "type": "stock",
+            "provider_id": "MSFT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "NVDA",
+            "name": "NVIDIA Corporation",
+            "type": "stock",
+            "provider_id": "NVDA",
+            "currency": "USD"
+        },
+        {
+            "symbol": "AMZN",
+            "name": "Amazon.com Inc.",
+            "type": "stock",
+            "provider_id": "AMZN",
+            "currency": "USD"
+        },
+        {
+            "symbol": "META",
+            "name": "Meta Platforms Inc.",
+            "type": "stock",
+            "provider_id": "META",
+            "currency": "USD"
+        },
+        {
+            "symbol": "TSLA",
+            "name": "Tesla Inc.",
+            "type": "stock",
+            "provider_id": "TSLA",
+            "currency": "USD"
+        },
+        {
+            "symbol": "JPM",
+            "name": "JPMorgan Chase & Co.",
+            "type": "stock",
+            "provider_id": "JPM",
+            "currency": "USD"
+        },
+        {
+            "symbol": "WMT",
+            "name": "Walmart Inc.",
+            "type": "stock",
+            "provider_id": "WMT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "BRK-B",
+            "name": "Berkshire Hathaway Inc.",
+            "type": "stock",
+            "provider_id": "BRK-B",
+            "currency": "USD"
+        },
+        {
+            "symbol": "GOOG",
+            "name": "Alphabet Inc.",
+            "type": "stock",
+            "provider_id": "GOOG",
+            "currency": "USD"
+        },
+        {
+            "symbol": "NFLX",
+            "name": "Netflix Inc.",
+            "type": "stock",
+            "provider_id": "NFLX",
+            "currency": "USD"
+        },
+        {
+            "symbol": "COST",
+            "name": "Costco Wholesale Corporation",
+            "type": "stock",
+            "provider_id": "COST",
+            "currency": "USD"
+        },
+        {
+            "symbol": "V",
+            "name": "Visa Inc.",
+            "type": "stock",
+            "provider_id": "V",
+            "currency": "USD"
+        },
+        {
+            "symbol": "MA",
+            "name": "Mastercard Incorporated",
+            "type": "stock",
+            "provider_id": "MA",
+            "currency": "USD"
+        },
+        {
+            "symbol": "KO",
+            "name": "The Coca-Cola Company",
+            "type": "stock",
+            "provider_id": "KO",
+            "currency": "USD"
+        },
+        {
+            "symbol": "PEP",
+            "name": "PepsiCo Inc.",
+            "type": "stock",
+            "provider_id": "PEP",
+            "currency": "USD"
+        },
+        {
+            "symbol": "AMD",
+            "name": "Advanced Micro Devices Inc.",
+            "type": "stock",
+            "provider_id": "AMD",
+            "currency": "USD"
+        },
+        {
+            "symbol": "CRM",
+            "name": "Salesforce Inc.",
+            "type": "stock",
+            "provider_id": "CRM",
+            "currency": "USD"
+        },
+        {
+            "symbol": "ORCL",
+            "name": "Oracle Corporation",
+            "type": "stock",
+            "provider_id": "ORCL",
+            "currency": "USD"
+        },
+        {
+            "symbol": "BAC",
+            "name": "Bank of America Corporation",
+            "type": "stock",
+            "provider_id": "BAC",
+            "currency": "USD"
+        },
+        {
+            "symbol": "SPY",
+            "name": "SPDR S&P 500 ETF Trust",
+            "type": "etf",
+            "provider_id": "SPY",
+            "currency": "USD"
+        },
+        {
+            "symbol": "QQQ",
+            "name": "Invesco QQQ Trust",
+            "type": "etf",
+            "provider_id": "QQQ",
+            "currency": "USD"
+        },
+        {
+            "symbol": "VOO",
+            "name": "Vanguard S&P 500 ETF",
+            "type": "etf",
+            "provider_id": "VOO",
+            "currency": "USD"
+        },
+        {
+            "symbol": "TLT",
+            "name": "iShares 20+ Year Treasury Bond ETF",
+            "type": "etf",
+            "provider_id": "TLT",
+            "currency": "USD"
+        },
+        {
+            "symbol": "GLD",
+            "name": "SPDR Gold Shares",
+            "type": "etf",
+            "provider_id": "GLD",
+            "currency": "USD"
+        },
+        {
+            "symbol": "ARKK",
+            "name": "ARK Innovation ETF",
+            "type": "etf",
+            "provider_id": "ARKK",
+            "currency": "USD"
+        },
+        {
+            "symbol": "DIA",
+            "name": "SPDR Dow Jones Industrial Average ETF",
+            "type": "etf",
+            "provider_id": "DIA",
+            "currency": "USD"
+        },
+        {
+            "symbol": "XLK",
+            "name": "Technology Select Sector SPDR Fund",
+            "type": "etf",
+            "provider_id": "XLK",
+            "currency": "USD"
+        },
+        {
+            "symbol": "XLF",
+            "name": "Financial Select Sector SPDR Fund",
+            "type": "etf",
+            "provider_id": "XLF",
+            "currency": "USD"
+        },
+        {
+            "symbol": "IWM",
+            "name": "iShares Russell 2000 ETF",
+            "type": "etf",
+            "provider_id": "IWM",
+            "currency": "USD"
+        },
+        {
+            "symbol": "USDTRY",
+            "name": "US Dollar / Turkish Lira",
+            "type": "fx",
+            "provider_id": "USDTRY",
+            "currency": "TRY"
+        },
+        {
+            "symbol": "EURTRY",
+            "name": "Euro / Turkish Lira",
+            "type": "fx",
+            "provider_id": "EURTRY",
+            "currency": "TRY"
+        },
+        {
+            "symbol": "GBPTRY",
+            "name": "British Pound / Turkish Lira",
+            "type": "fx",
+            "provider_id": "GBPTRY",
+            "currency": "TRY"
+        },
+        {
+            "symbol": "JPYTRY",
+            "name": "Japanese Yen / Turkish Lira",
+            "type": "fx",
+            "provider_id": "JPYTRY",
+            "currency": "TRY"
+        },
+        {
+            "symbol": "CHFTRY",
+            "name": "Swiss Franc / Turkish Lira",
+            "type": "fx",
+            "provider_id": "CHFTRY",
+            "currency": "TRY"
+        },
+        {
+            "symbol": "USDEUR",
+            "name": "US Dollar / Euro",
+            "type": "fx",
+            "provider_id": "USDEUR",
+            "currency": "EUR"
+        },
+        {
+            "symbol": "USDJPY",
+            "name": "US Dollar / Japanese Yen",
+            "type": "fx",
+            "provider_id": "USDJPY",
+            "currency": "JPY"
+        },
+        {
+            "symbol": "USDGBP",
+            "name": "US Dollar / British Pound",
+            "type": "fx",
+            "provider_id": "USDGBP",
+            "currency": "GBP"
+        },
+        {
+            "symbol": "USDAUD",
+            "name": "US Dollar / Australian Dollar",
+            "type": "fx",
+            "provider_id": "USDAUD",
+            "currency": "AUD"
+        },
+        {
+            "symbol": "USDCAD",
+            "name": "US Dollar / Canadian Dollar",
+            "type": "fx",
+            "provider_id": "USDCAD",
+            "currency": "CAD"
+        },
+        {
+            "symbol": "XAUUSD",
+            "name": "Gold",
+            "type": "metal",
+            "provider_id": "XAUUSD",
+            "currency": "USD"
+        },
+        {
+            "symbol": "XAGUSD",
+            "name": "Silver",
+            "type": "metal",
+            "provider_id": "XAGUSD",
+            "currency": "USD"
+        },
+        {
+            "symbol": "XPTUSD",
+            "name": "Platinum",
+            "type": "metal",
+            "provider_id": "XPTUSD",
+            "currency": "USD"
+        },
+        {
+            "symbol": "XPDUSD",
+            "name": "Palladium",
+            "type": "metal",
+            "provider_id": "XPDUSD",
+            "currency": "USD"
+        }
+    ]
+}

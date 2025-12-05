@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 // MARK: - Connection State
@@ -28,25 +27,4 @@ public struct PriceUpdate {
         self.volume = volume
         self.timestamp = timestamp
     }
-}
-
-// MARK: - WebSocket Errors
-public enum WebSocketError: Error {
-    case invalidURL
-    case connectionFailed
-    case authenticationFailed
-    case subscriptionFailed
-    case parseError
-    case timeout
-}
-
-// MARK: - WebSocket Provider Protocol
-public protocol WebSocketProvider: AnyObject {
-    var priceUpdatePublisher: PassthroughSubject<PriceUpdate, Never> { get }
-    var connectionStatePublisher: PassthroughSubject<ConnectionState, Never> { get }
-
-    func connect()
-    func disconnect()
-    func subscribe(symbols: [String])
-    func unsubscribe(symbols: [String])
 }

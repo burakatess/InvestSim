@@ -13,13 +13,12 @@ final class AssetCatalogManager: ObservableObject {
     @Published private(set) var totalAssets: Int = 0
 
     private let context: NSManagedObjectContext
-    // private let cryptoSyncer: CryptoSyncService
-    private let usStocksSyncer: USStocksSyncService
+    private let assetSyncer: USStocksSyncService
 
     private init() {
         let container = CoreDataStack.shared.persistentContainer
         self.context = container.viewContext
-        self.usStocksSyncer = USStocksSyncService(context: context)
+        self.assetSyncer = USStocksSyncService(context: context)
 
         updateTotalAssets()
         startAutoSync()
@@ -33,7 +32,8 @@ final class AssetCatalogManager: ObservableObject {
             updateTotalAssets()
             print("📊 AssetCatalogManager: Current asset count: \(totalAssets)")
 
-            if totalAssets < 100 {
+            // Threshold for 64 assets
+            if totalAssets < 60 {
                 print(
                     "🚀 AssetCatalogManager: Asset count low (\(totalAssets)), triggering auto-sync..."
                 )
@@ -42,6 +42,7 @@ final class AssetCatalogManager: ObservableObject {
                 print(
                     "✅ AssetCatalogManager: Asset count sufficient (\(totalAssets)), skipping auto-sync"
                 )
+                // Only sync if weekly schedule requires it
                 await syncIfNeeded()
             }
         }
@@ -69,17 +70,10 @@ final class AssetCatalogManager: ObservableObject {
         do {
             print("🔄 Starting full asset sync...")
 
-            // Crypto sync temporarily disabled
-            // if let cryptoCount = try? await cryptoSyncer.syncTopCryptos() {
-            //     print("✅ Synced \(cryptoCount) cryptocurrencies")
-            // } else {
-            //     print("⚠️ Crypto sync failed, continuing...")
-            // }
-
-            // Sync US stocks/ETFs (90 assets) - ALWAYS sync
-            syncStatus = "Syncing US stocks/ETFs..."
-            if let usCount = try? await usStocksSyncer.syncAllAssets() {
-                print("✅ Synced \(usCount) US stocks/ETFs")
+            // Sync all assets from Supabase
+            syncStatus = "Syncing assets from Supabase..."
+            if let count = try? await assetSyncer.syncAllAssets() {
+                print("✅ Synced \(count) assets from Supabase")
             }
 
             lastSyncDate = Date()
@@ -94,11 +88,9 @@ final class AssetCatalogManager: ObservableObject {
 
     /// Sync only if needed (based on individual service schedules)
     func syncIfNeeded() async {
-        // let needsCryptoSync = cryptoSyncer.shouldSync()
+        let needsSync = assetSyncer.shouldSync()
 
-        let needsUSStocksSync = usStocksSyncer.shouldSync()
-
-        if needsUSStocksSync {
+        if needsSync {
             await syncAll()
         } else {
             print("ℹ️ No sync needed")
@@ -113,8 +105,8 @@ final class AssetCatalogManager: ObservableObject {
     /// Get sync status for each category
     func getSyncInfo() -> SyncInfo {
         return SyncInfo(
-            cryptoLastSync: nil,
-            usStocksLastSync: usStocksSyncer.getLastSyncDate(),
+            cryptoLastSync: assetSyncer.getLastSyncDate(),  // Use same date for both for now
+            usStocksLastSync: assetSyncer.getLastSyncDate(),
             totalAssets: totalAssets
         )
     }

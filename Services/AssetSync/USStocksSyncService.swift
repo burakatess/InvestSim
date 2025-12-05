@@ -1,7 +1,7 @@
 import CoreData
 import Foundation
 
-/// Service for syncing US stocks and ETFs from Supabase
+/// Service for syncing all assets from Supabase
 @MainActor
 final class USStocksSyncService {
     private let context: NSManagedObjectContext
@@ -12,35 +12,49 @@ final class USStocksSyncService {
     private var assetsURL: URL? {
         var components = URLComponents(string: "\(supabaseURL)/rest/v1/assets")
         components?.queryItems = [
-            URLQueryItem(name: "select", value: "code,name,symbol,category"),
-            URLQueryItem(name: "or", value: "(category.eq.us_stock,category.eq.us_etf)"),
+            URLQueryItem(
+                name: "select", value: "code,name,symbol,category,type,provider_id,currency")
+            // Fetch all active assets (no type filter)
         ]
         return components?.url
+    }
+
+    // ... (existing code)
+
+    /// Struct representing an asset from Supabase
+    private struct SyncSupabaseAsset: Codable {
+        let code: String
+        let name: String
+        let symbol: String
+        let type: String
+        let providerId: String?
+        let currency: String?
+        let metadata: AssetMetadataJSON?
     }
 
     init(context: NSManagedObjectContext) {
         self.context = context
     }
 
-    /// Sync all US stocks and ETFs from Supabase
+    /// Sync all assets from Supabase
     /// - Returns: Number of assets synced
     @discardableResult
     func syncAllAssets() async throws -> Int {
-        print("🔄 Starting US stocks/ETFs sync from Supabase...")
+        print("🔄 Starting full asset sync from Supabase...")
 
         let assets = try await fetchFromSupabase()
-        print("📊 Found \(assets.count) US assets to sync")
+        print("📊 Found \(assets.count) assets to sync")
 
         try await saveToDatabase(assets)
 
-        print("✅ US stocks/ETFs sync completed: \(assets.count) assets")
+        print("✅ Asset sync completed: \(assets.count) assets")
         return assets.count
     }
 
-    /// Fetch US assets from Supabase
-    private func fetchFromSupabase() async throws -> [USAsset] {
+    /// Fetch assets from Supabase
+    private func fetchFromSupabase() async throws -> [SyncSupabaseAsset] {
         guard let url = assetsURL else {
-            throw USStocksError.invalidURL
+            throw SyncError.invalidURL
         }
 
         var request = URLRequest(url: url)
@@ -51,7 +65,7 @@ final class USStocksSyncService {
         let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
-            throw USStocksError.invalidResponse
+            throw SyncError.invalidResponse
         }
 
         guard httpResponse.statusCode == 200 else {
@@ -59,21 +73,20 @@ final class USStocksSyncService {
             if let errorString = String(data: data, encoding: .utf8) {
                 print("Response: \(errorString)")
             }
-            throw USStocksError.httpError(httpResponse.statusCode)
+            throw SyncError.httpError(httpResponse.statusCode)
         }
 
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        let assets = try decoder.decode([USAsset].self, from: data)
+        let assets = try decoder.decode([SyncSupabaseAsset].self, from: data)
 
         return assets
     }
 
     /// Save assets to Core Data
-    private func saveToDatabase(_ assets: [USAsset]) async throws {
-        // Fetch existing US assets
+    private func saveToDatabase(_ assets: [SyncSupabaseAsset]) async throws {
+        // Fetch existing assets
         let fetchRequest: NSFetchRequest<AssetDefinition> = AssetDefinition.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "category IN %@", ["us_stock", "us_etf"])
         let existingAssets = try context.fetch(fetchRequest)
 
         // Create a map of existing assets by code
@@ -82,38 +95,31 @@ final class USStocksSyncService {
             existingMap[asset.code] = asset
         }
 
-        // Update or create assets
-        for usAsset in assets {
-            if let existing = existingMap[usAsset.code] {
-                // Update existing
-                existing.displayName = usAsset.name
-                existing.symbol = usAsset.symbol
-                existing.category = usAsset.category
-                existing.lastSyncDate = Date()
-                existing.isActive = true
+        // Track synced assets to identify stale ones
+        var syncedCodes = Set<String>()
 
-                // Update metadata (sector info)
-                if let metadata = usAsset.metadata {
-                    existing.metadata = try? JSONEncoder().encode(metadata)
-                }
+        // Update or create assets
+        for remoteAsset in assets {
+            syncedCodes.insert(remoteAsset.code)
+
+            if let existing = existingMap[remoteAsset.code] {
+                // Update existing
+                updateAsset(existing, with: remoteAsset)
             } else {
                 // Create new
                 let asset = AssetDefinition(context: context)
                 asset.id = UUID()
-                asset.code = usAsset.code
-                asset.displayName = usAsset.name
-                asset.symbol = usAsset.symbol
-                asset.category = usAsset.category
-                asset.currency = "USD"
-                asset.providerType = AssetProviderType.yahoo.rawValue
-                asset.yahooSymbol = usAsset.symbol  // US stocks use symbol directly
-                asset.isActive = true
                 asset.createdAt = Date()
-                asset.lastSyncDate = Date()
+                updateAsset(asset, with: remoteAsset)
+            }
+        }
 
-                // Store metadata (sector info)
-                if let metadata = usAsset.metadata {
-                    asset.metadata = try? JSONEncoder().encode(metadata)
+        // Deactivate stale assets (those not in the current sync)
+        for asset in existingAssets {
+            if !syncedCodes.contains(asset.code) {
+                if asset.isActive {
+                    print("⚠️ Deactivating stale asset: \(asset.code)")
+                    asset.isActive = false
                 }
             }
         }
@@ -121,15 +127,67 @@ final class USStocksSyncService {
         // Save context
         if context.hasChanges {
             try context.save()
-            print("💾 Saved \(assets.count) US assets to database")
+            print("💾 Saved \(assets.count) assets to database")
         }
     }
 
-    /// Get last sync date for US assets
+    private func updateAsset(_ asset: AssetDefinition, with remote: SyncSupabaseAsset) {
+        asset.code = remote.code
+        asset.displayName = remote.name
+        asset.symbol = remote.symbol
+
+        // Map Supabase type to AssetType rawValue
+        switch remote.type {
+        case "stock": asset.category = "us_stock"
+        case "etf": asset.category = "us_etf"
+        case "fx": asset.category = "forex"
+        case "metal": asset.category = "commodity"
+        default: asset.category = remote.type
+        }
+
+        // Use remote currency if available, otherwise fallback
+        if let remoteCurrency = remote.currency, !remoteCurrency.isEmpty {
+            asset.currency = remoteCurrency
+        } else {
+            asset.currency = determineCurrency(for: remote.type)
+        }
+
+        asset.providerType = determineProviderType(for: remote.type)
+        asset.isActive = true
+        asset.lastSyncDate = Date()
+
+        // Map specific fields
+        if remote.type == "crypto" {
+            asset.coingeckoId = remote.providerId  // Use provider_id as coingeckoId/identifier
+        } else {
+            asset.yahooSymbol = remote.symbol
+        }
+
+        if let metadata = remote.metadata {
+            asset.metadata = try? JSONEncoder().encode(metadata)
+        }
+    }
+
+    private func determineCurrency(for type: String) -> String {
+        switch type {
+        case "crypto", "stock", "etf", "metal": return "USD"
+        case "fx": return "TRY"  // Default to TRY for now based on seed (USDTRY etc)
+        default: return "USD"
+        }
+    }
+
+    private func determineProviderType(for type: String) -> String {
+        switch type {
+        case "crypto": return "binance"
+        case "stock", "etf", "metal", "fx": return "yahoo"
+        default: return "yahoo"
+        }
+    }
+
+    /// Get last sync date
     func getLastSyncDate() -> Date? {
         let fetchRequest: NSFetchRequest<AssetDefinition> = AssetDefinition.fetchRequest()
-        fetchRequest.predicate = NSPredicate(
-            format: "category IN %@ AND lastSyncDate != nil", ["us_stock", "us_etf"])
+        fetchRequest.predicate = NSPredicate(format: "lastSyncDate != nil")
         fetchRequest.sortDescriptors = [NSSortDescriptor(key: "lastSyncDate", ascending: false)]
         fetchRequest.fetchLimit = 1
 
@@ -150,22 +208,13 @@ final class USStocksSyncService {
     }
 }
 
-/// Struct representing a US stock/ETF from Supabase
-private struct USAsset: Codable {
-    let code: String
-    let name: String
-    let symbol: String
-    let category: String
-    let metadata: AssetMetadataJSON?
-}
-
-/// Metadata structure for US assets
+/// Metadata structure
 private struct AssetMetadataJSON: Codable {
     let sector: String?
 }
 
-/// Errors for US stocks sync
-enum USStocksError: Error {
+/// Errors for sync
+enum SyncError: Error {
     case invalidURL
     case invalidResponse
     case httpError(Int)

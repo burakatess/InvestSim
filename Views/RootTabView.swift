@@ -9,34 +9,34 @@ struct RootTabView: View {
     @State private var selectedTab: TabDestination = .portfolio
 
     enum TabDestination: Hashable {
-        case portfolio, plans, scenarios, prices, settings
+        case prices, scenarios, portfolio, predict, settings
 
         var title: String {
             switch self {
-            case .portfolio: return "Portfolio"
-            case .plans: return "Plans"
-            case .scenarios: return "Scenarios"
             case .prices: return "Prices"
+            case .scenarios: return "Scenarios"
+            case .portfolio: return "Portfolio"
+            case .predict: return "Predict"
             case .settings: return "Settings"
             }
         }
 
         var icon: String {
             switch self {
-            case .portfolio: return "wallet.pass"
-            case .plans: return "chart.line.uptrend.xyaxis"
-            case .scenarios: return "chart.bar"
             case .prices: return "chart.line.flattrend.xyaxis"
+            case .scenarios: return "chart.bar"
+            case .portfolio: return "wallet.pass"
+            case .predict: return "chart.line.uptrend.xyaxis"
             case .settings: return "gearshape"
             }
         }
 
         var selectedIcon: String {
             switch self {
-            case .portfolio: return "wallet.pass.fill"
-            case .plans: return "chart.line.uptrend.xyaxis"  // same symbol has fill
+            case .prices: return "chart.line.flattrend.xyaxis"
             case .scenarios: return "chart.bar.fill"
-            case .prices: return "chart.line.flattrend.xyaxis"  // no filled variant
+            case .portfolio: return "wallet.pass.fill"
+            case .predict: return "chart.line.uptrend.xyaxis"
             case .settings: return "gearshape.fill"
             }
         }
@@ -44,6 +44,20 @@ struct RootTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
+            // Fiyatlar Tab
+            PricesDashboardView(container: container)
+                .tabItem {
+                    tabItemLabel(for: .prices)
+                }
+                .tag(TabDestination.prices)
+
+            // Senaryo Tab
+            ScenariosHomeView()
+                .tabItem {
+                    tabItemLabel(for: .scenarios)
+                }
+                .tag(TabDestination.scenarios)
+
             // Portföy Tab
             Group {
                 if let dashboardVM = dashboardVM {
@@ -62,26 +76,12 @@ struct RootTabView: View {
             }
             .tag(TabDestination.portfolio)
 
-            // Plan Tab
-            PlansHomeView(container: container)
+            // Predict Tab
+            PredictView()
                 .tabItem {
-                    tabItemLabel(for: .plans)
+                    tabItemLabel(for: .predict)
                 }
-                .tag(TabDestination.plans)
-
-            // Senaryo Tab
-            ScenariosHomeView()
-                .tabItem {
-                    tabItemLabel(for: .scenarios)
-                }
-                .tag(TabDestination.scenarios)
-
-            // Fiyatlar Tab
-            PricesDashboardView(container: container)
-                .tabItem {
-                    tabItemLabel(for: .prices)
-                }
-                .tag(TabDestination.prices)
+                .tag(TabDestination.predict)
 
             // Ayarlar Tab
             SettingsView()
