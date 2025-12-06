@@ -132,7 +132,263 @@ struct ErrorView: View {
     }
 }
 
-// MARK: - Welcome / Auth View
+// MARK: - Welcome / Auth View (Premium Fintech Design)
+
+// MARK: - Design System Colors
+extension Color {
+    fileprivate static let bgGradientStart = Color(hex: "#0B1120")
+    fileprivate static let bgGradientMid1 = Color(hex: "#141A33")
+    fileprivate static let bgGradientMid2 = Color(hex: "#1A1F3D")
+    fileprivate static let bgGradientEnd = Color(hex: "#2A2F5C")
+    fileprivate static let accentPurple = Color(hex: "#7C4DFF")
+    fileprivate static let accentCyan = Color(hex: "#4CC9F0")
+    fileprivate static let glassWhite = Color.white.opacity(0.08)
+    fileprivate static let glassBorder = Color.white.opacity(0.12)
+}
+
+// MARK: - Glass Container Modifier
+struct GlassContainer: ViewModifier {
+    var cornerRadius: CGFloat = 28
+    var opacity: Double = 0.18
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial.opacity(opacity))
+                    .background(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .fill(Color.white.opacity(0.04))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [Color.white.opacity(0.2), Color.white.opacity(0.05)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+                    .shadow(color: Color.black.opacity(0.4), radius: 40, x: 0, y: 20)
+            )
+    }
+}
+
+extension View {
+    func glassContainer(cornerRadius: CGFloat = 28, opacity: Double = 0.18) -> some View {
+        modifier(GlassContainer(cornerRadius: cornerRadius, opacity: opacity))
+    }
+}
+
+// MARK: - Premium Input Field
+struct PremiumInputField: View {
+    let icon: String
+    let placeholder: String
+    @Binding var text: String
+    var isSecure: Bool = false
+    @Binding var isPasswordVisible: Bool
+    var contentType: UITextContentType?
+
+    var body: some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 18, weight: .medium))
+                .foregroundColor(.white.opacity(0.5))
+                .frame(width: 24)
+
+            if isSecure && !isPasswordVisible {
+                SecureField(
+                    "", text: $text, prompt: Text(placeholder).foregroundColor(.white.opacity(0.35))
+                )
+                .foregroundColor(.white)
+                .textContentType(contentType)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+            } else {
+                TextField(
+                    "", text: $text, prompt: Text(placeholder).foregroundColor(.white.opacity(0.35))
+                )
+                .foregroundColor(.white)
+                .textContentType(contentType)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(contentType == .emailAddress ? .emailAddress : .default)
+            }
+
+            if isSecure {
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        isPasswordVisible.toggle()
+                    }
+                } label: {
+                    Image(systemName: isPasswordVisible ? "eye.slash.fill" : "eye.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white.opacity(0.4))
+                }
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+}
+
+// MARK: - Gradient Button
+struct GradientButton: View {
+    let title: String
+    let action: () -> Void
+    var isDisabled: Bool = false
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: {
+            let impactMed = UIImpactFeedbackGenerator(style: .medium)
+            impactMed.impactOccurred()
+            action()
+        }) {
+            Text(title)
+                .font(.system(size: 17, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    Group {
+                        if isDisabled {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(Color.white.opacity(0.1))
+                        } else {
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.accentPurple, .accentCyan],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .shadow(color: .accentPurple.opacity(0.4), radius: 16, x: 0, y: 8)
+                        }
+                    }
+                )
+        }
+        .disabled(isDisabled)
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
+// MARK: - Google Button
+struct GoogleButton: View {
+    let action: () -> Void
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: {
+            let impactMed = UIImpactFeedbackGenerator(style: .light)
+            impactMed.impactOccurred()
+            action()
+        }) {
+            HStack(spacing: 12) {
+                // Google "G" icon
+                ZStack {
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 26, height: 26)
+
+                    Text("G")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color(hex: "#EA4335"), Color(hex: "#FBBC05"),
+                                    Color(hex: "#34A853"), Color(hex: "#4285F4"),
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                }
+
+                Text("Google ile devam et")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 54)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    )
+            )
+        }
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
+// MARK: - Guest Button
+struct GuestButton: View {
+    let action: () -> Void
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: {
+            let impactMed = UIImpactFeedbackGenerator(style: .light)
+            impactMed.impactOccurred()
+            action()
+        }) {
+            HStack(spacing: 10) {
+                Image(systemName: "person.fill.questionmark")
+                    .font(.system(size: 16, weight: .medium))
+
+                Text("Misafir olarak devam et")
+                    .font(.system(size: 15, weight: .bold))
+            }
+            .foregroundColor(.accentCyan)
+            .frame(maxWidth: .infinity)
+            .frame(height: 52)
+            .background(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(Color.accentCyan.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            .stroke(Color.accentCyan.opacity(0.5), lineWidth: 1.5)
+                    )
+                    .shadow(color: .accentCyan.opacity(0.2), radius: 12, x: 0, y: 4)
+            )
+        }
+        .scaleEffect(isPressed ? 0.97 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in isPressed = true }
+                .onEnded { _ in isPressed = false }
+        )
+    }
+}
+
+// MARK: - WelcomeView (Premium Fintech Login)
 struct WelcomeView: View {
     @EnvironmentObject private var authManager: AuthenticationManager
     @State private var email = ""
@@ -141,48 +397,284 @@ struct WelcomeView: View {
     @State private var isPasswordVisible = false
     @State private var isSignUp = false
     @State private var localError: String?
+    @State private var isAppearing = false
     @FocusState private var focusedField: Field?
 
     private enum Field {
         case name, email, password
     }
 
-    var body: some View {
+    // MARK: - Background Gradient
+    private var backgroundGradient: some View {
         ZStack {
+            // Base gradient
             LinearGradient(
-                colors: [
-                    Color(red: 5 / 255, green: 10 / 255, blue: 35 / 255),
-                    Color(red: 11 / 255, green: 17 / 255, blue: 54 / 255),
+                stops: [
+                    .init(color: .bgGradientStart, location: 0.0),
+                    .init(color: .bgGradientMid1, location: 0.3),
+                    .init(color: .bgGradientMid2, location: 0.6),
+                    .init(color: .bgGradientEnd, location: 1.0),
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
-            .ignoresSafeArea()
+
+            // Subtle radial glow
+            RadialGradient(
+                colors: [.accentPurple.opacity(0.15), .clear],
+                center: .topTrailing,
+                startRadius: 50,
+                endRadius: 400
+            )
+
+            RadialGradient(
+                colors: [.accentCyan.opacity(0.1), .clear],
+                center: .bottomLeading,
+                startRadius: 50,
+                endRadius: 350
+            )
+        }
+        .ignoresSafeArea()
+    }
+
+    // MARK: - Header Section
+    private var headerSection: some View {
+        VStack(spacing: 16) {
+            // App Icon
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [.accentPurple, .accentCyan],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 72, height: 72)
+                    .shadow(color: .accentPurple.opacity(0.4), radius: 20, x: 0, y: 10)
+
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 32, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+            .scaleEffect(isAppearing ? 1.0 : 0.5)
+            .opacity(isAppearing ? 1.0 : 0)
+
+            VStack(spacing: 8) {
+                Text("InvestSimulator")
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+
+                Text("Akıllı yatırım, sadeleştirilmiş.")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+            .opacity(isAppearing ? 1.0 : 0)
+            .offset(y: isAppearing ? 0 : 20)
+        }
+        .padding(.top, 40)
+    }
+
+    // MARK: - Login Card
+    private var loginCard: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Card Header
+            VStack(alignment: .leading, spacing: 6) {
+                Text(isSignUp ? "Hesap Oluştur" : "Giriş Yap")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.white)
+
+                Text(isSignUp ? "Yatırım yolculuğuna başla." : "Hesabına giriş yap.")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+
+            // Input Fields
+            VStack(spacing: 14) {
+                if isSignUp {
+                    PremiumInputField(
+                        icon: "person.fill",
+                        placeholder: "Ad Soyad",
+                        text: $fullName,
+                        isSecure: false,
+                        isPasswordVisible: .constant(true),
+                        contentType: .name
+                    )
+                    .focused($focusedField, equals: .name)
+                }
+
+                PremiumInputField(
+                    icon: "envelope.fill",
+                    placeholder: "E-posta adresi",
+                    text: $email,
+                    isSecure: false,
+                    isPasswordVisible: .constant(true),
+                    contentType: .emailAddress
+                )
+                .focused($focusedField, equals: .email)
+
+                PremiumInputField(
+                    icon: "lock.fill",
+                    placeholder: "Şifre",
+                    text: $password,
+                    isSecure: true,
+                    isPasswordVisible: $isPasswordVisible,
+                    contentType: .password
+                )
+                .focused($focusedField, equals: .password)
+            }
+
+            // Primary Action Button
+            GradientButton(
+                title: isSignUp ? "Hesap Oluştur" : "E-posta ile giriş yap",
+                action: primaryAction,
+                isDisabled: primaryDisabled
+            )
+
+            // Toggle Sign Up / Sign In
+            Button {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    isSignUp.toggle()
+                    fullName = ""
+                }
+            } label: {
+                Text(
+                    isSignUp
+                        ? "Zaten hesabın var mı? **Giriş yap**"
+                        : "Hesabın yok mu? **Hızlıca oluştur**"
+                )
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white.opacity(0.7))
+            }
+            .frame(maxWidth: .infinity)
+
+            // Divider
+            HStack(spacing: 16) {
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 1)
+
+                Text("veya")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
+
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 1)
+            }
+
+            // Google Button
+            GoogleButton {
+                Task { await authManager.signInWithGoogle() }
+            }
+        }
+        .padding(24)
+        .glassContainer()
+        .opacity(isAppearing ? 1.0 : 0)
+        .offset(y: isAppearing ? 0 : 30)
+    }
+
+    // MARK: - Guest Section
+    private var guestSection: some View {
+        VStack(spacing: 16) {
+            VStack(spacing: 6) {
+                Text("Hızlıca keşfetmek ister misin?")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+
+                Text("Kayıt olmadan portföy ve fiyatları incele.")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(.white.opacity(0.5))
+            }
+
+            GuestButton {
+                Task { await authManager.continueAsGuest() }
+            }
+        }
+        .opacity(isAppearing ? 1.0 : 0)
+        .offset(y: isAppearing ? 0 : 20)
+    }
+
+    // MARK: - Error Banner
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(.yellow)
+
+            Text(message)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white)
+                .lineLimit(2)
+
+            Spacer(minLength: 0)
+
+            Button {
+                withAnimation(.spring()) { localError = nil }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white.opacity(0.6))
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.red.opacity(0.25))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.red.opacity(0.4), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 20)
+    }
+
+    // MARK: - Body
+    var body: some View {
+        ZStack {
+            backgroundGradient
 
             ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 24) {
+                VStack(spacing: 32) {
                     headerSection
-                    highlightsSection
-                    authCard
+                    loginCard
                     guestSection
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 32)
+                .padding(.bottom, 40)
             }
-        }
-        .overlay(alignment: .top) {
-            if let localError {
-                errorBanner(localError)
-                    .padding(.top, 16)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+
+            // Error overlay
+            if let error = localError {
+                VStack {
+                    errorBanner(error)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    Spacer()
+                }
+                .padding(.top, 60)
             }
-        }
-        .overlay {
+
+            // Loading overlay
             if authManager.isLoading {
-                Color.black.opacity(0.3)
+                Color.black.opacity(0.5)
                     .ignoresSafeArea()
                     .overlay(
-                        ProgressView().progressViewStyle(.circular).tint(.white).scaleEffect(1.2))
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                .scaleEffect(1.3)
+
+                            Text("Giriş yapılıyor...")
+                                .font(.system(size: 15, weight: .medium))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                    )
+                    .transition(.opacity)
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.7).delay(0.1)) {
+                isAppearing = true
             }
         }
         .onChange(of: authManager.authState) { _, state in
@@ -191,238 +683,37 @@ struct WelcomeView: View {
             }
         }
         .onChange(of: authManager.latestErrorMessage) { _, message in
-            withAnimation {
+            withAnimation(.spring()) {
                 localError = message
             }
         }
+        .animation(.spring(), value: isSignUp)
     }
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("InvestSimulator'a Hoş Geldin")
-                .font(.system(size: 34, weight: .bold))
-                .foregroundColor(.white)
-
-            Text(
-                "DCA planlarını oluştur, senaryoları test et ve gerçek zamanlı fiyatlarla portföyünü takip et."
-            )
-            .font(.system(size: 16, weight: .medium))
-            .foregroundColor(.white.opacity(0.75))
-        }
-    }
-
-    private var highlightsSection: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                highlightPill(title: "Gerçek zamanlı fiyat")
-                highlightPill(title: "Senaryo simülasyonu")
-                highlightPill(title: "Modern portföy görünümü")
-            }
-        }
-        .scrollIndicators(.hidden)
-    }
-
-    private func highlightPill(title: String) -> some View {
-        Text(title)
-            .font(.caption.weight(.semibold))
-            .foregroundColor(.white)
-            .padding(.vertical, 8)
-            .padding(.horizontal, 14)
-            .background(Color.white.opacity(0.08), in: Capsule())
-    }
-
-    private var authCard: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text(isSignUp ? "Hesap Oluştur" : "Giriş Yap")
-                    .font(.title3.weight(.semibold))
-                    .foregroundColor(.white)
-                Text(
-                    isSignUp
-                        ? "Yalnızca ad, e-posta ve şifre ile başla."
-                        : "Hızlıca giriş yaparak dashboard'a ulaş."
-                )
-                .font(.footnote)
-                .foregroundColor(.white.opacity(0.6))
-            }
-
-            if isSignUp {
-                modernTextField(
-                    title: "Ad Soyad",
-                    text: $fullName,
-                    icon: "person.text.rectangle"
-                )
-                .focused($focusedField, equals: .name)
-            }
-
-            modernTextField(
-                title: "E-posta veya kullanıcı adı",
-                text: $email,
-                icon: "envelope.open.fill"
-            )
-            .keyboardType(.emailAddress)
-            .textInputAutocapitalization(.never)
-            .focused($focusedField, equals: .email)
-
-            modernSecureField(
-                title: "Şifre",
-                text: $password,
-                icon: "lock.fill"
-            )
-            .focused($focusedField, equals: .password)
-
-            Button(action: primaryAction) {
-                Text(isSignUp ? "Hesap Oluştur" : "E-posta ile giriş yap")
-                    .font(.system(size: 16, weight: .semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(primaryDisabled ? Color.white.opacity(0.15) : Color(hex: "#7C4DFF"))
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-            }
-            .disabled(primaryDisabled)
-
-            Button(action: { isSignUp.toggle() }) {
-                Text(
-                    isSignUp ? "Zaten hesabın var mı? Giriş yap" : "Hesabın yok mu? Hızlıca oluştur"
-                )
-                .font(.footnote.weight(.semibold))
-                .foregroundColor(.white.opacity(0.75))
-            }
-            .padding(.top, -6)
-
-            Divider().background(Color.white.opacity(0.1))
-
-            Button(action: { Task { await authManager.signInWithGoogle() } }) {
-                HStack {
-                    Image(systemName: "g.circle.fill")
-                        .font(.title2)
-                    Text("Google ile devam et")
-                        .font(.system(size: 15, weight: .semibold))
-                }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-                .background(Color(red: 222 / 255, green: 78 / 255, blue: 64 / 255))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            }
-        }
-        .padding(24)
-        .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color.white.opacity(0.04))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.35), radius: 32, x: 0, y: 24)
-        )
-    }
-
-    private var guestSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Zaman kaybetmek istemiyor musun?")
-                .font(.headline.weight(.semibold))
-                .foregroundColor(.white)
-            Text(
-                "Misafir modu ile kayıt olmadan portföy kartlarını ve fiyat panelini keşfedebilirsin."
-            )
-            .font(.subheadline)
-            .foregroundColor(.white.opacity(0.65))
-
-            Button(action: {
-                Task {
-                    await authManager.continueAsGuest()
-                }
-            }) {
-                Text("Misafir olarak devam et")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundColor(Color(hex: "#20C997"))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color(hex: "#20C997"), lineWidth: 1.5)
-                    )
-            }
-        }
-    }
-
-    private func modernTextField(title: String, text: Binding<String>, icon: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.6))
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .foregroundColor(.white.opacity(0.65))
-                TextField(title, text: text)
-                    .foregroundColor(.white)
-                    .disableAutocorrection(true)
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.05))
-            )
-        }
-    }
-
-    private func modernSecureField(title: String, text: Binding<String>, icon: String) -> some View
-    {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.caption)
-                .foregroundColor(.white.opacity(0.6))
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .foregroundColor(.white.opacity(0.65))
-                Group {
-                    if isPasswordVisible {
-                        TextField(title, text: text)
-                    } else {
-                        SecureField(title, text: text)
-                    }
-                }
-                .foregroundColor(.white)
-                .textInputAutocapitalization(.never)
-                .disableAutocorrection(true)
-
-                Button {
-                    isPasswordVisible.toggle()
-                } label: {
-                    Image(systemName: isPasswordVisible ? "eye.slash.fill" : "eye.fill")
-                        .foregroundColor(.white.opacity(0.7))
-                }
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(Color.white.opacity(0.05))
-            )
-        }
-    }
-
+    // MARK: - Actions
     private func primaryAction() {
         localError = nil
-        let trimmedMail = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedMail.isEmpty, password.count >= 4 else {
-            localError =
-                "Lütfen geçerli bir e-posta/kullanıcı adı ve en az 4 karakterli şifre girin."
+        focusedField = nil
+
+        let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedEmail.isEmpty, password.count >= 4 else {
+            withAnimation(.spring()) {
+                localError = "Lütfen geçerli bir e-posta ve en az 4 karakterli şifre girin."
+            }
             return
         }
 
         if isSignUp {
             Task {
                 await authManager.signUpWithEmail(
-                    email: trimmedMail, password: password,
-                    name: fullName.isEmpty ? "Yeni Yatırımcı" : fullName)
+                    email: trimmedEmail,
+                    password: password,
+                    name: fullName.isEmpty ? "Yeni Yatırımcı" : fullName
+                )
             }
         } else {
             Task {
-                await authManager.signInWithEmail(email: trimmedMail, password: password)
+                await authManager.signInWithEmail(email: trimmedEmail, password: password)
             }
         }
     }
@@ -430,29 +721,6 @@ struct WelcomeView: View {
     private var primaryDisabled: Bool {
         email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || password.count < 4
             || authManager.isLoading
-    }
-
-    private func errorBanner(_ message: String) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(.yellow)
-            Text(message)
-                .font(.footnote.weight(.semibold))
-                .foregroundColor(.white)
-            Spacer(minLength: 0)
-            Button {
-                withAnimation { localError = nil }
-            } label: {
-                Image(systemName: "xmark")
-                    .foregroundColor(.white.opacity(0.7))
-            }
-        }
-        .padding()
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.black.opacity(0.55))
-        )
-        .padding(.horizontal)
     }
 }
 
