@@ -71,6 +71,27 @@ serve(async (req) => {
                 console.error('Upsert error:', upsertError);
                 return errorResponse('Failed to update prices', 500);
             }
+
+            // Also write to prices_history for daily historical record
+            const today = new Date().toISOString().split('T')[0];
+            const historyUpdates = updates.map(u => ({
+                asset_id: u.asset_id,
+                date: today,
+                open: u.price,
+                high: u.price,
+                low: u.price,
+                close: u.price,
+                provider: 'binance-daily',
+            }));
+
+            const { error: historyError } = await supabase
+                .from('prices_history')
+                .upsert(historyUpdates, { onConflict: 'asset_id,date' });
+
+            if (historyError) {
+                // Log but don't fail - prices_latest update succeeded
+                console.warn('History upsert warning:', historyError.message);
+            }
         }
 
         const elapsed = Date.now() - startTime;
