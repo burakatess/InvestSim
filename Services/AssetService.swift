@@ -5,21 +5,38 @@ import Supabase
 // AssetService - Supabase Integration
 // Re-enabled after fixing package dependencies
 
-/// Asset model from Supabase
+/// Asset model from Supabase (matches new schema)
 struct SupabaseAsset: Codable, Identifiable, Hashable {
     let id: UUID
-    let code: String
-    let name: String
-    let symbol: String?
-    let category: String
+    let symbol: String  // Primary identifier (was 'code')
+    let displayName: String
+    let assetClass: String  // crypto, stock, etf, fx, metal
+    let currency: String
     let provider: String
-    let isWebsocket: Bool
-    let websocketProvider: String?
+    let providerSymbol: String?
+    let isActive: Bool
+
+    // Computed property for backward compatibility
+    var code: String { symbol }
+    var name: String { displayName }
+
+    /// Convert DB asset_class to iOS category
+    var category: String {
+        switch assetClass.lowercased() {
+        case "stock": return "us_stock"
+        case "etf": return "us_etf"
+        case "fx": return "forex"
+        case "metal": return "commodity"
+        default: return assetClass  // crypto stays as crypto
+        }
+    }
 
     enum CodingKeys: String, CodingKey {
-        case id, code, name, symbol, category, provider
-        case isWebsocket = "is_websocket"
-        case websocketProvider = "websocket_provider"
+        case id, symbol, currency, provider
+        case displayName = "display_name"
+        case assetClass = "asset_class"
+        case providerSymbol = "provider_symbol"
+        case isActive = "is_active"
     }
 }
 
@@ -56,7 +73,8 @@ final class AssetService: ObservableObject {
                 try await supabase
                 .from("assets")
                 .select()
-                .order("code")
+                .eq("is_active", value: true)
+                .order("symbol")
                 .execute()
                 .value
 
@@ -74,9 +92,9 @@ final class AssetService: ObservableObject {
         return assets.first { $0.code.uppercased() == code.uppercased() }
     }
 
-    /// Get all WebSocket-enabled assets
+    /// Get all assets (legacy compatibility - returns all active assets)
     func getWebSocketAssets() -> [SupabaseAsset] {
-        return assets.filter { $0.isWebsocket }
+        return assets.filter { $0.isActive }
     }
 
     /// Get assets by category

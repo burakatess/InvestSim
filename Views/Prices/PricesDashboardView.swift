@@ -38,11 +38,9 @@ private enum PricesTheme {
 
 struct PricesDashboardView: View {
     @StateObject private var viewModel: PricesViewModel
-    @State private var showingAssetManager = false
-    @State private var isSyncingAssets = false
-    @State private var syncStatus: String?
-    @State private var hasAppeared = false  // Guard için onAppear sonsuz döngüsünü önler
+    @State private var hasAppeared = false
     @State private var visibleAssets: [String: String] = [:]
+    @State private var priceRefreshTimer: Timer?
     private let container: AppContainer
 
     init(container: AppContainer? = nil) {
@@ -78,89 +76,47 @@ struct PricesDashboardView: View {
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { EmptyToolbarContent() }
-            .searchable(
-                text: $viewModel.searchText,
-                placement: .navigationBarDrawer(displayMode: .always),
-                prompt: "Search assets (BTC, gold, stock...)"
-            )
             .toolbarColorScheme(.dark, for: .navigationBar)
             .onAppear {
-                // Load prices only on first appearance
                 guard !hasAppeared else { return }
                 hasAppeared = true
-                viewModel.refreshPrices()
+                // Auto-sync assets and start price refresh
+                Task {
+                    await AssetCatalogManager.shared.forceSync()
+                    viewModel.refreshPrices()
+                }
+                // Start 30-second refresh timer
+                priceRefreshTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) {
+                    _ in
+                    Task { @MainActor in
+                        viewModel.refreshPrices()
+                    }
+                }
             }
-        }
-        .sheet(isPresented: $showingAssetManager) {
-            AssetDefinitionManagerSheet(container: container)
+            .onDisappear {
+                priceRefreshTimer?.invalidate()
+                priceRefreshTimer = nil
+            }
         }
     }
 }
 
 extension PricesDashboardView {
     fileprivate var header: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("Prices")
-                        .font(.system(size: 28, weight: .bold, design: .default))
-                        .foregroundColor(PricesTheme.textPrimary)
-                    Text("View real-time market data")
-                        .font(.system(size: 14, weight: .regular))
-                        .foregroundColor(PricesTheme.textSecondary)
-                }
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Prices")
+                .font(.system(size: 28, weight: .bold, design: .default))
+                .foregroundColor(PricesTheme.textPrimary)
+            HStack {
+                Text("View real-time market data")
+                    .font(.system(size: 14, weight: .regular))
+                    .foregroundColor(PricesTheme.textSecondary)
                 Spacer()
-                HStack(spacing: 12) {
-                    // Temporary: Manual Asset Sync Button
-                    headerButton(systemImage: "arrow.triangle.2.circlepath") {
-                        Task {
-                            isSyncingAssets = true
-                            syncStatus = "Syncing assets..."
-                            await AssetCatalogManager.shared.forceSync()
-                            syncStatus = "✅ Sync completed"
-                            isSyncingAssets = false
-
-                            // Clear status after 3 seconds
-                            try? await Task.sleep(nanoseconds: 3_000_000_000)
-                            syncStatus = nil
-                        }
-                    }
-                    .disabled(isSyncingAssets)
-
-                    headerButton(systemImage: "square.and.pencil") {
-                        showingAssetManager = true
-                    }
-                    headerButton(systemImage: "arrow.clockwise") {
-                        viewModel.refreshPrices()
-                    }
-                    .disabled(viewModel.isLoading)
-                }
-            }
-
-            // Sync status indicator
-            if let status = syncStatus {
-                HStack(spacing: 8) {
-                    if isSyncingAssets {
-                        ProgressView()
-                            .progressViewStyle(
-                                CircularProgressViewStyle(tint: PricesTheme.accentPrimary)
-                            )
-                            .scaleEffect(0.7)
-                    }
-                    Text(status)
+                if let lastUpdated = viewModel.lastUpdated {
+                    Text("Updated: \(lastUpdated, style: .time)")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(PricesTheme.textSecondary)
+                        .foregroundColor(PricesTheme.textMuted)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(
-                    Capsule()
-                        .fill(PricesTheme.controlBackground)
-                        .overlay(
-                            Capsule()
-                                .stroke(PricesTheme.border, lineWidth: 1)
-                        )
-                )
             }
         }
     }
@@ -345,9 +301,8 @@ extension PricesDashboardView {
     }
 
     private func scheduleSubscriptionUpdate() {
-        // SubscriptionManager has internal debounce, so we can call this directly
-        let assets = visibleAssets.map { (code: $0.key, provider: $0.value) }
-        UnifiedPriceManager.shared.subscriptionManager.updateVisibleAssets(assets)
+        // No-op: Price updates now come from backend cron jobs
+        // No manual subscription needed
     }
 
     fileprivate var loadingView: some View {

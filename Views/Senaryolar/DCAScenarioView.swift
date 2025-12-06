@@ -373,7 +373,7 @@ final class DCASimulationVM: ObservableObject {
                     self.priceLoadingMessage = nil
                 }
 
-                let simulationResult = try await Task.detached(priority: .userInitiated) {
+                let simulationResult = try await Task { @MainActor in
                     try self.engine.simulate(config: snapshot, provider: provider)
                 }.value
                 let preparedTransactions = self.buildTransactions(
@@ -494,24 +494,28 @@ final class DCASimulationVM: ObservableObject {
                     definition.displayName)
             }
 
+            // Use new simplified API - fetch historical data by asset code
             let series = try await priceManager.historicalPrices(
-                for: definition,
-                start: config.startDate,
-                end: config.endDate
+                for: definition.code,
+                range: "1y"
             )
             guard !series.isEmpty else {
                 throw SimulationPreparationError.historicalDataUnavailable(definition.displayName)
             }
 
             var map: [Date: Decimal] = [:]
-            let ordered = series.sorted { $0.updatedAt < $1.updatedAt }
-            for entry in ordered {
-                let normalized = calendar.startOfDay(for: entry.updatedAt)
-                map[normalized] = entry.price
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+
+            for entry in series {
+                if let entryDate = dateFormatter.date(from: entry.date) {
+                    let normalized = calendar.startOfDay(for: entryDate)
+                    map[normalized] = Decimal(entry.close)
+                }
             }
             history[code.symbol] = map
-            if let last = ordered.last {
-                latest[code.symbol] = last.price
+            if let last = series.last {
+                latest[code.symbol] = Decimal(last.close)
             }
         }
 
@@ -1471,7 +1475,7 @@ extension DCAScenarioView {
 
     fileprivate func sanitizeNumericInput(_ value: String) -> String {
         let allowed = CharacterSet(charactersIn: "0123456789,")
-        var filteredScalars = value.unicodeScalars.filter { allowed.contains($0) }
+        let filteredScalars = value.unicodeScalars.filter { allowed.contains($0) }
         var sanitized = String(String.UnicodeScalarView(filteredScalars))
 
         let commaIndices = sanitized.indices.filter { sanitized[$0] == "," }

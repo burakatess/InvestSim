@@ -13,23 +13,31 @@ final class USStocksSyncService {
         var components = URLComponents(string: "\(supabaseURL)/rest/v1/assets")
         components?.queryItems = [
             URLQueryItem(
-                name: "select", value: "code,name,symbol,category,type,provider_id,currency")
-            // Fetch all active assets (no type filter)
+                name: "select",
+                value: "symbol,display_name,asset_class,provider,provider_symbol,currency,is_active"
+            ),
+            URLQueryItem(name: "is_active", value: "eq.true"),
         ]
         return components?.url
     }
 
-    // ... (existing code)
-
-    /// Struct representing an asset from Supabase
+    /// Struct representing an asset from Supabase - matches new schema
     private struct SyncSupabaseAsset: Codable {
-        let code: String
-        let name: String
-        let symbol: String
-        let type: String
-        let providerId: String?
-        let currency: String?
-        let metadata: AssetMetadataJSON?
+        let symbol: String  // Primary identifier
+        let displayName: String
+        let assetClass: String  // crypto, stock, etf, fx, metal
+        let provider: String
+        let providerSymbol: String?
+        let currency: String
+        let isActive: Bool
+
+        enum CodingKeys: String, CodingKey {
+            case symbol, provider, currency
+            case displayName = "display_name"
+            case assetClass = "asset_class"
+            case providerSymbol = "provider_symbol"
+            case isActive = "is_active"
+        }
     }
 
     init(context: NSManagedObjectContext) {
@@ -77,7 +85,6 @@ final class USStocksSyncService {
         }
 
         let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
         let assets = try decoder.decode([SyncSupabaseAsset].self, from: data)
 
         return assets
@@ -89,20 +96,20 @@ final class USStocksSyncService {
         let fetchRequest: NSFetchRequest<AssetDefinition> = AssetDefinition.fetchRequest()
         let existingAssets = try context.fetch(fetchRequest)
 
-        // Create a map of existing assets by code
+        // Create a map of existing assets by symbol (was code)
         var existingMap: [String: AssetDefinition] = [:]
         for asset in existingAssets {
             existingMap[asset.code] = asset
         }
 
         // Track synced assets to identify stale ones
-        var syncedCodes = Set<String>()
+        var syncedSymbols = Set<String>()
 
         // Update or create assets
         for remoteAsset in assets {
-            syncedCodes.insert(remoteAsset.code)
+            syncedSymbols.insert(remoteAsset.symbol)
 
-            if let existing = existingMap[remoteAsset.code] {
+            if let existing = existingMap[remoteAsset.symbol] {
                 // Update existing
                 updateAsset(existing, with: remoteAsset)
             } else {
@@ -116,7 +123,7 @@ final class USStocksSyncService {
 
         // Deactivate stale assets (those not in the current sync)
         for asset in existingAssets {
-            if !syncedCodes.contains(asset.code) {
+            if !syncedSymbols.contains(asset.code) {
                 if asset.isActive {
                     print("⚠️ Deactivating stale asset: \(asset.code)")
                     asset.isActive = false
@@ -132,55 +139,29 @@ final class USStocksSyncService {
     }
 
     private func updateAsset(_ asset: AssetDefinition, with remote: SyncSupabaseAsset) {
-        asset.code = remote.code
-        asset.displayName = remote.name
+        asset.code = remote.symbol  // symbol is the new code
+        asset.displayName = remote.displayName
         asset.symbol = remote.symbol
 
-        // Map Supabase type to AssetType rawValue
-        switch remote.type {
+        // Map Supabase asset_class to iOS category
+        switch remote.assetClass {
         case "stock": asset.category = "us_stock"
         case "etf": asset.category = "us_etf"
         case "fx": asset.category = "forex"
         case "metal": asset.category = "commodity"
-        default: asset.category = remote.type
+        default: asset.category = remote.assetClass  // crypto stays as crypto
         }
 
-        // Use remote currency if available, otherwise fallback
-        if let remoteCurrency = remote.currency, !remoteCurrency.isEmpty {
-            asset.currency = remoteCurrency
-        } else {
-            asset.currency = determineCurrency(for: remote.type)
-        }
-
-        asset.providerType = determineProviderType(for: remote.type)
-        asset.isActive = true
+        asset.currency = remote.currency
+        asset.providerType = remote.provider
+        asset.isActive = remote.isActive
         asset.lastSyncDate = Date()
 
-        // Map specific fields
-        if remote.type == "crypto" {
-            asset.coingeckoId = remote.providerId  // Use provider_id as coingeckoId/identifier
+        // Map specific fields based on provider
+        if remote.provider == "binance" {
+            asset.coingeckoId = remote.providerSymbol  // Use provider_symbol
         } else {
-            asset.yahooSymbol = remote.symbol
-        }
-
-        if let metadata = remote.metadata {
-            asset.metadata = try? JSONEncoder().encode(metadata)
-        }
-    }
-
-    private func determineCurrency(for type: String) -> String {
-        switch type {
-        case "crypto", "stock", "etf", "metal": return "USD"
-        case "fx": return "TRY"  // Default to TRY for now based on seed (USDTRY etc)
-        default: return "USD"
-        }
-    }
-
-    private func determineProviderType(for type: String) -> String {
-        switch type {
-        case "crypto": return "binance"
-        case "stock", "etf", "metal", "fx": return "yahoo"
-        default: return "yahoo"
+            asset.yahooSymbol = remote.providerSymbol ?? remote.symbol
         }
     }
 
@@ -206,11 +187,6 @@ final class USStocksSyncService {
         let weekInSeconds: TimeInterval = 7 * 24 * 60 * 60
         return Date().timeIntervalSince(lastSync) > weekInSeconds
     }
-}
-
-/// Metadata structure
-private struct AssetMetadataJSON: Codable {
-    let sector: String?
 }
 
 /// Errors for sync

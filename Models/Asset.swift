@@ -26,6 +26,29 @@ public enum AssetType: String, Codable, CaseIterable {
         case .us_etf: return "chart.bar.fill"
         }
     }
+
+    /// Map to database asset_class values
+    public var dbCategory: String {
+        switch self {
+        case .forex: return "fx"
+        case .crypto: return "crypto"
+        case .commodity: return "metal"
+        case .us_stock: return "stock"
+        case .us_etf: return "etf"
+        }
+    }
+
+    /// Initialize from database asset_class value
+    public static func fromDBCategory(_ dbValue: String) -> AssetType? {
+        switch dbValue.lowercased() {
+        case "fx": return .forex
+        case "crypto": return .crypto
+        case "metal": return .commodity
+        case "stock": return .us_stock
+        case "etf": return .us_etf
+        default: return nil
+        }
+    }
 }
 
 public enum AssetProviderType: String, Codable, CaseIterable {

@@ -145,9 +145,8 @@ final class DashboardVM: ObservableObject {
         print("📊 Yüklenen varlık sayısı: \(userAssets.count)")
         print("📊 Yüklenen işlem sayısı: \(recentTrades.count)")
 
-        // Subscribe to assets for price updates
-        let assetCodes = userAssets.map { $0.asset.rawValue }
-        priceManager.subscribe(to: assetCodes)
+        // Price updates are now handled via priceUpdatePublisher subscription
+        // No need to manually subscribe - prices come from backend cron jobs
 
         // Update UI
         objectWillChange.send()
@@ -418,7 +417,7 @@ final class DashboardVM: ObservableObject {
             errorMessage("Satılacak varlık bulunamadı.")
             return
         }
-        var target = userAssets[index]
+        let target = userAssets[index]
         guard quantity > 0 else {
             errorMessage("Satış miktarı sıfırdan büyük olmalıdır.")
             return
