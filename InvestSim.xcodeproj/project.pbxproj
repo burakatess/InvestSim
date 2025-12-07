@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6655B622008F4510BB852D85 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = D0C82B05055E4A7F8F12B424 /* Localizable.strings */; };
 		511E0C3F113B4639817E4627 /* UserAsset.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2878714EF38947DCAF57DB86 /* UserAsset.swift */; };
 		670BE7BC2ECDE1C20054A55D /* ScenariosHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE7BB2ECDE1C20054A55D /* ScenariosHomeView.swift */; };
 		670BE8182ECEF72A0054A55D /* AssetSyncScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8122ECEF72A0054A55D /* AssetSyncScheduler.swift */; };
@@ -28,6 +27,10 @@
 		670BE87D2ED844190054A55D /* SupabaseAuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE87A2ED844190054A55D /* SupabaseAuthService.swift */; };
 		670BE8A22EE0F10A0054A55D /* PredictView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8A02EE0F10A0054A55D /* PredictView.swift */; };
 		670BE8A82EE123750054A55D /* PriceModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8A72EE123750054A55D /* PriceModels.swift */; };
+		670BE8AD2EE4F14B0054A55D /* ScenarioDesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8AB2EE4F14B0054A55D /* ScenarioDesignSystem.swift */; };
+		670BE8AE2EE4F14B0054A55D /* ScenarioResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8AC2EE4F14B0054A55D /* ScenarioResultView.swift */; };
+		670BE8B12EE513430054A55D /* SupabaseHistoricalPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8B02EE513430054A55D /* SupabaseHistoricalPriceService.swift */; };
+		670BE8B22EE513430054A55D /* HistoricalPriceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8AF2EE513430054A55D /* HistoricalPriceProvider.swift */; };
 		675049ED2EAA73BC00D18E1A /* ModernCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675049EA2EAA73BC00D18E1A /* ModernCard.swift */; };
 		675049EE2EAA73BC00D18E1A /* ModernButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675049E82EAA73BC00D18E1A /* ModernButton.swift */; };
 		675049F42EAA73C600D18E1A /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675049F12EAA73C600D18E1A /* Spacing.swift */; };
@@ -131,7 +134,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		D0C82B05055E4A7F8F12B424 /* Localizable.strings */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		2878714EF38947DCAF57DB86 /* UserAsset.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserAsset.swift; sourceTree = "<group>"; };
 		670BE7BB2ECDE1C20054A55D /* ScenariosHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenariosHomeView.swift; sourceTree = "<group>"; };
 		670BE8112ECEF72A0054A55D /* AssetCatalogManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetCatalogManager.swift; sourceTree = "<group>"; };
@@ -146,6 +148,10 @@
 		670BE87B2ED844190054A55D /* UserProfileService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserProfileService.swift; sourceTree = "<group>"; };
 		670BE8A02EE0F10A0054A55D /* PredictView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PredictView.swift; sourceTree = "<group>"; };
 		670BE8A72EE123750054A55D /* PriceModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceModels.swift; sourceTree = "<group>"; };
+		670BE8AB2EE4F14B0054A55D /* ScenarioDesignSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioDesignSystem.swift; sourceTree = "<group>"; };
+		670BE8AC2EE4F14B0054A55D /* ScenarioResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioResultView.swift; sourceTree = "<group>"; };
+		670BE8AF2EE513430054A55D /* HistoricalPriceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalPriceProvider.swift; sourceTree = "<group>"; };
+		670BE8B02EE513430054A55D /* SupabaseHistoricalPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseHistoricalPriceService.swift; sourceTree = "<group>"; };
 		675049DA2EAA729C00D18E1A /* InvestSim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InvestSim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		675049E82EAA73BC00D18E1A /* ModernButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernButton.swift; sourceTree = "<group>"; };
 		675049EA2EAA73BC00D18E1A /* ModernCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernCard.swift; sourceTree = "<group>"; };
@@ -417,6 +423,8 @@
 		67504A1C2EAA73EF00D18E1A /* DCA */ = {
 			isa = PBXGroup;
 			children = (
+				670BE8AF2EE513430054A55D /* HistoricalPriceProvider.swift */,
+				670BE8B02EE513430054A55D /* SupabaseHistoricalPriceService.swift */,
 				67504A182EAA73EF00D18E1A /* DCAEngine.swift */,
 				67504A192EAA73EF00D18E1A /* DCAEngine.swift.backup */,
 				67504A1A2EAA73EF00D18E1A /* DCAProvider.swift */,
@@ -572,7 +580,6 @@
 				67504A932EAA74CC00D18E1A /* RootTabView.swift */,
 				67C6B9003FF7A5B100F88E1A /* SettingsView.swift */,
 				67A3F5B23FE6CD3500F88E1A /* Prices */,
-				67A3F5843FE65A5A00F88E1A /* Plans */,
 				67504A9E2EAA74CC00D18E1A /* Senaryolar */,
 			);
 			path = Views;
@@ -596,6 +603,8 @@
 		67504A9E2EAA74CC00D18E1A /* Senaryolar */ = {
 			isa = PBXGroup;
 			children = (
+				670BE8AB2EE4F14B0054A55D /* ScenarioDesignSystem.swift */,
+				670BE8AC2EE4F14B0054A55D /* ScenarioResultView.swift */,
 				670BE7BB2ECDE1C20054A55D /* ScenariosHomeView.swift */,
 				67504A9C2EAA74CC00D18E1A /* Components */,
 				67504A9D2EAA74CC00D18E1A /* DCAScenarioView.swift */,
@@ -616,13 +625,6 @@
 				67504C192EAA81EC00D18E1A /* CoinGeckoAssetSyncService.swift */,
 			);
 			path = Synchronization;
-			sourceTree = "<group>";
-		};
-		67A3F5843FE65A5A00F88E1A /* Plans */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = Plans;
 			sourceTree = "<group>";
 		};
 		67A3F5A73FE68F7200F88E1A /* CoreData */ = {
@@ -781,6 +783,8 @@
 				67504A5C2EAA73EF00D18E1A /* PDFExporter.swift in Sources */,
 				67504A5D2EAA73EF00D18E1A /* SettingsManager.swift in Sources */,
 				67504A5F2EAA73EF00D18E1A /* CoreDataStack.swift in Sources */,
+				670BE8AD2EE4F14B0054A55D /* ScenarioDesignSystem.swift in Sources */,
+				670BE8AE2EE4F14B0054A55D /* ScenarioResultView.swift in Sources */,
 				67A3F5A93FE68F9B00F88E1A /* CoreDataSeeder.swift in Sources */,
 				67504A602EAA73EF00D18E1A /* BiometricAuthManager.swift in Sources */,
 				67504A7A2EAA73FA00D18E1A /* NetworkReachability.swift in Sources */,
@@ -793,6 +797,8 @@
 				67504A812EAA73FA00D18E1A /* MoneyFormatter.swift in Sources */,
 				67504ABE2EAA75BF00D18E1A /* InvestSimModel.xcdatamodeld in Sources */,
 				67504A822EAA73FA00D18E1A /* Protocols.swift in Sources */,
+				670BE8B12EE513430054A55D /* SupabaseHistoricalPriceService.swift in Sources */,
+				670BE8B22EE513430054A55D /* HistoricalPriceProvider.swift in Sources */,
 				67504AB32EAA752100D18E1A /* ModernMetricCards.swift in Sources */,
 				670BE8A82EE123750054A55D /* PriceModels.swift in Sources */,
 				67504AB42EAA752100D18E1A /* PortfolioTabs.swift in Sources */,

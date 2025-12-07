@@ -8,16 +8,19 @@ struct AllocationButtonsBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Button("Distribute Equally", action: onEqualize)
-                .buttonStyle(SecondaryButtonStyle())
+            Button("Eşitle", action: onEqualize)
+                .buttonStyle(.bordered)
+                .tint(ScenarioDesign.accentCyan)
                 .frame(maxWidth: .infinity)
                 .disabled(isDisabled)
-            Button("Spread Remaining", action: onSpread)
-                .buttonStyle(SecondaryButtonStyle())
+            Button("Dağıt", action: onSpread)
+                .buttonStyle(.bordered)
+                .tint(ScenarioDesign.accentCyan)
                 .frame(maxWidth: .infinity)
                 .disabled(isDisabled)
-            Button("Reset", action: onReset)
-                .buttonStyle(SecondaryButtonStyle())
+            Button("Sıfırla", action: onReset)
+                .buttonStyle(.bordered)
+                .tint(ScenarioDesign.accentCyan)
                 .frame(maxWidth: .infinity)
                 .disabled(isDisabled)
         }

@@ -7,27 +7,52 @@ struct TemplateSaveSheet: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 16) {
-                Text("Template Name")
-                    .font(.headline)
-                TextField("E.g: Balanced BTC/GOLD", text: $name)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
+            ZStack {
+                ScenarioDesign.backgroundGradient
+                    .ignoresSafeArea()
+
+                VStack(spacing: 20) {
+                    Text("Şablon Adı")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(ScenarioDesign.textPrimary)
+
+                    TextField(
+                        "", text: $name,
+                        prompt: Text("Örn: BTC/Altın Dengeli").foregroundColor(
+                            ScenarioDesign.textPlaceholder)
+                    )
+                    .font(.system(size: 16))
+                    .foregroundColor(ScenarioDesign.textPrimary)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white.opacity(0.08))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                            )
+                    )
                     .padding(.horizontal)
 
-                Spacer()
-                Button("Save") {
-                    onSave(name)
-                    dismiss()
+                    Spacer()
+
+                    ScenarioGradientButton(title: "Kaydet", icon: "square.and.arrow.down") {
+                        onSave(name)
+                        dismiss()
+                    }
+                    .disabled(name.isEmpty)
+                    .opacity(name.isEmpty ? 0.5 : 1)
+                    .padding(.horizontal)
                 }
-                .buttonStyle(PrimaryButtonStyle())
-                .disabled(name.isEmpty)
-                .padding(.horizontal)
+                .padding()
             }
-            .padding()
-            .navigationTitle("Save Template")
+            .navigationTitle("Şablon Kaydet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) { Button("Close") { dismiss() } }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Kapat") { dismiss() }
+                        .foregroundColor(ScenarioDesign.textSecondary)
+                }
             }
         }
     }

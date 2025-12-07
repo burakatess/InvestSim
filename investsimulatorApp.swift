@@ -472,7 +472,6 @@ struct WelcomeView: View {
             .opacity(isAppearing ? 1.0 : 0)
             .offset(y: isAppearing ? 0 : 20)
         }
-        .padding(.top, 40)
     }
 
     // MARK: - Login Card
@@ -634,15 +633,22 @@ struct WelcomeView: View {
         ZStack {
             backgroundGradient
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 32) {
-                    headerSection
-                    loginCard
-                    guestSection
-                }
-                .padding(.horizontal, 24)
-                .padding(.bottom, 40)
+            VStack(spacing: 0) {
+                Spacer(minLength: 20)
+
+                headerSection
+
+                Spacer(minLength: 24)
+
+                loginCard
+
+                Spacer(minLength: 16)
+
+                guestSection
+
+                Spacer(minLength: 20)
             }
+            .padding(.horizontal, 24)
 
             // Error overlay
             if let error = localError {

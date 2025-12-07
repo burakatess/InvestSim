@@ -148,8 +148,8 @@ struct PlaceholderScenariosView: View {
                 Text("Create and manage your DCA scenarios here.")
                     .foregroundColor(.secondary)
                 NavigationLink("New Scenario", destination: DCAScenarioView())
-                    .buttonStyle(PrimaryButtonStyle())
-                    .padding(.horizontal, 24)
+                    .buttonStyle(.borderedProminent)
+                    .tint(Color(red: 124 / 255, green: 77 / 255, blue: 1.0))
             }
             .padding()
         }
