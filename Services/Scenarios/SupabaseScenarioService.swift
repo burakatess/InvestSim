@@ -40,6 +40,150 @@ struct UserScenario: Codable, Identifiable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
+
+    // Custom decoder to handle Supabase date formats
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+
+        id = try container.decode(UUID.self, forKey: .id)
+        userId = try container.decode(UUID.self, forKey: .userId)
+        name = try container.decode(String.self, forKey: .name)
+        frequencyPerMonth = try container.decode(Int.self, forKey: .frequencyPerMonth)
+        currency = try container.decode(String.self, forKey: .currency)
+        allocations = try container.decode([ScenarioAllocation].self, forKey: .allocations)
+        transactionsJson = try container.decodeIfPresent(
+            [ScenarioTransactionRecord].self, forKey: .transactionsJson)
+        sparklineData = try container.decodeIfPresent([Double].self, forKey: .sparklineData)
+
+        // Handle Decimal - Supabase returns as String or Number
+        if let decimalString = try? container.decode(String.self, forKey: .monthlyAmount) {
+            monthlyAmount = Decimal(string: decimalString) ?? 0
+        } else if let doubleValue = try? container.decode(Double.self, forKey: .monthlyAmount) {
+            monthlyAmount = Decimal(doubleValue)
+        } else {
+            monthlyAmount = 0
+        }
+
+        if let decimalString = try? container.decode(String.self, forKey: .annualIncreasePercent) {
+            annualIncreasePercent = Decimal(string: decimalString) ?? 0
+        } else if let doubleValue = try? container.decode(
+            Double.self, forKey: .annualIncreasePercent)
+        {
+            annualIncreasePercent = Decimal(doubleValue)
+        } else {
+            annualIncreasePercent = 0
+        }
+
+        if let decimalString = try? container.decode(String.self, forKey: .totalInvested) {
+            totalInvested = Decimal(string: decimalString)
+        } else if let doubleValue = try? container.decode(Double.self, forKey: .totalInvested) {
+            totalInvested = Decimal(doubleValue)
+        } else {
+            totalInvested = nil
+        }
+
+        if let decimalString = try? container.decode(String.self, forKey: .finalValue) {
+            finalValue = Decimal(string: decimalString)
+        } else if let doubleValue = try? container.decode(Double.self, forKey: .finalValue) {
+            finalValue = Decimal(doubleValue)
+        } else {
+            finalValue = nil
+        }
+
+        // ROI percent - can be String or Double
+        if let doubleValue = try? container.decode(Double.self, forKey: .roiPercent) {
+            roiPercent = doubleValue
+        } else if let decimalString = try? container.decode(String.self, forKey: .roiPercent) {
+            roiPercent = Double(decimalString)
+        } else {
+            roiPercent = nil
+        }
+
+        // Date parsing - Supabase DATE format is "YYYY-MM-DD"
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+
+        let startDateString = try container.decode(String.self, forKey: .startDate)
+        if let date = dateFormatter.date(from: startDateString) {
+            startDate = date
+        } else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .startDate, in: container,
+                debugDescription: "Invalid date format: \(startDateString)")
+        }
+
+        let endDateString = try container.decode(String.self, forKey: .endDate)
+        if let date = dateFormatter.date(from: endDateString) {
+            endDate = date
+        } else {
+            throw DecodingError.dataCorruptedError(
+                forKey: .endDate, in: container,
+                debugDescription: "Invalid date format: \(endDateString)")
+        }
+
+        // Timestamp parsing - Supabase TIMESTAMPTZ format
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+
+        let isoFormatterWithoutFraction = ISO8601DateFormatter()
+        isoFormatterWithoutFraction.formatOptions = [.withInternetDateTime]
+
+        if let createdAtString = try container.decodeIfPresent(String.self, forKey: .createdAt) {
+            createdAt =
+                isoFormatter.date(from: createdAtString)
+                ?? isoFormatterWithoutFraction.date(from: createdAtString)
+        } else {
+            createdAt = nil
+        }
+
+        if let updatedAtString = try container.decodeIfPresent(String.self, forKey: .updatedAt) {
+            updatedAt =
+                isoFormatter.date(from: updatedAtString)
+                ?? isoFormatterWithoutFraction.date(from: updatedAtString)
+        } else {
+            updatedAt = nil
+        }
+    }
+
+    // Standard memberwise init for creating new scenarios
+    init(
+        id: UUID,
+        userId: UUID,
+        name: String,
+        startDate: Date,
+        endDate: Date,
+        frequencyPerMonth: Int,
+        monthlyAmount: Decimal,
+        currency: String,
+        annualIncreasePercent: Decimal,
+        allocations: [ScenarioAllocation],
+        totalInvested: Decimal?,
+        finalValue: Decimal?,
+        roiPercent: Double?,
+        transactionsJson: [ScenarioTransactionRecord]?,
+        sparklineData: [Double]?,
+        createdAt: Date?,
+        updatedAt: Date?
+    ) {
+        self.id = id
+        self.userId = userId
+        self.name = name
+        self.startDate = startDate
+        self.endDate = endDate
+        self.frequencyPerMonth = frequencyPerMonth
+        self.monthlyAmount = monthlyAmount
+        self.currency = currency
+        self.annualIncreasePercent = annualIncreasePercent
+        self.allocations = allocations
+        self.totalInvested = totalInvested
+        self.finalValue = finalValue
+        self.roiPercent = roiPercent
+        self.transactionsJson = transactionsJson
+        self.sparklineData = sparklineData
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
 }
 
 struct ScenarioAllocation: Codable {

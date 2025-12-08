@@ -50,7 +50,7 @@ extension DealLog {
         if skipped {
             return "\(symbol) - Fiyat bulunamadı"
         } else {
-            return "\(symbol) - \(units.rounded(scale: 6)) adet @ \(price.rounded(scale: 2))₺"
+            return "\(symbol) - \(units.rounded(scale: 6)) adet @ \(price.rounded(scale: 2))$"
         }
     }
 }

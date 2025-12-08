@@ -333,7 +333,7 @@ struct AllocationDetailsView: View {
                                     Text(String(format: "%.1f%%", item.percentage))
                                         .font(.headline)
                                         .foregroundColor(PortfolioDesign.accentCyan)
-                                    Text(String(format: "%.2f TL", item.value))
+                                    Text(String(format: "$%.2f", item.value))
                                         .font(.caption)
                                         .foregroundColor(PortfolioDesign.textSecondary)
                                 }
@@ -477,7 +477,7 @@ private struct PortfolioHeaderCardView: View {
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
-        return "\(formatter.string(from: NSNumber(value: value)) ?? "0.00") TL"
+        return "$\(formatter.string(from: NSNumber(value: value)) ?? "0.00")"
     }
 }
 
@@ -657,7 +657,7 @@ private struct PremiumAssetCard: View {
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
-        return "\(formatter.string(from: NSNumber(value: value)) ?? "0.00") TL"
+        return "$\(formatter.string(from: NSNumber(value: value)) ?? "0.00")"
     }
 
     private func formatCurrencyShort(_ value: Double) -> String {
@@ -1217,7 +1217,7 @@ struct DashboardView: View {
         formatter.numberStyle = .decimal
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
-        return "\(formatter.string(from: NSNumber(value: value)) ?? "0.00") TL"
+        return "$\(formatter.string(from: NSNumber(value: value)) ?? "0.00")"
     }
 
     private func formatCurrencyShort(_ value: Double) -> String {

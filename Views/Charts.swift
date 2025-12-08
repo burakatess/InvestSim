@@ -3,23 +3,23 @@ import SwiftUI
 // MARK: - Dashboard Summary Card
 struct DashboardSummaryCard: View {
     let summary: AssetSummary
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Portfolio Summary")
                 .font(.title2)
-            
+
             HStack {
                 VStack(alignment: .leading) {
                     Text("Total Value")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text(MoneyFormatter.formatTRY(summary.currentValue))
+                    Text(MoneyFormatter.formatUSD(summary.currentValue))
                         .font(.title2.weight(.semibold))
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing) {
                     Text("ROI")
                         .font(.caption)
@@ -29,23 +29,23 @@ struct DashboardSummaryCard: View {
                         .foregroundColor(summary.profitLoss >= 0 ? .green : .red)
                 }
             }
-            
+
             HStack {
                 VStack(alignment: .leading) {
                     Text("Total Cost")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text(MoneyFormatter.formatTRY(summary.totalCost))
+                    Text(MoneyFormatter.formatUSD(summary.totalCost))
                         .font(.body)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing) {
                     Text("P/L")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text(MoneyFormatter.formatTRY(summary.pnl))
+                    Text(MoneyFormatter.formatUSD(summary.pnl))
                         .font(.body)
                         .foregroundColor(summary.pnl >= 0 ? .green : .red)
                 }
@@ -59,7 +59,7 @@ struct DashboardSummaryCard: View {
 // MARK: - Allocation Pie Chart
 struct AllocationPieChartView: View {
     let slices: [AllocationSlice]
-    
+
     var body: some View {
         VStack(spacing: 16) {
             if slices.isEmpty {
@@ -81,7 +81,7 @@ struct AllocationPieChartView: View {
                     }
                 }
                 .frame(height: 160)
-                
+
                 // Legend
                 VStack(alignment: .leading, spacing: 8) {
                     ForEach(slices) { slice in
@@ -99,7 +99,7 @@ struct AllocationPieChartView: View {
         }
         .background(RoundedRectangle(cornerRadius: 16).fill(Color.white))
     }
-    
+
     private func colorForAsset(_ asset: AssetCode) -> Color {
         // Basit renk atama - tüm varlıklar için
         let colors: [Color] = [
@@ -112,7 +112,7 @@ struct AllocationPieChartView: View {
             Color(hex: "#EC4899"),
             Color(hex: "#06B6D4"),
             Color(hex: "#A5F3FC"),
-            Color(hex: "#4338CA")
+            Color(hex: "#4338CA"),
         ]
         let index = abs(asset.rawValue.hashValue) % colors.count
         return colors[index]
@@ -122,16 +122,16 @@ struct AllocationPieChartView: View {
         return CGFloat(cum)
     }
     private func endAngle(_ index: Int) -> CGFloat {
-        let cum = slices.prefix(index+1).reduce(0.0) { $0 + $1.percentage }
+        let cum = slices.prefix(index + 1).reduce(0.0) { $0 + $1.percentage }
         return CGFloat(cum)
     }
     private func totalFormatted() -> String {
         let total = slices.reduce(Decimal(0)) { $0 + $1.value }
-        return MoneyFormatter.formatTRY(total)
+        return MoneyFormatter.formatUSD(total)
     }
     private func legendLine(for slice: AllocationSlice) -> String {
         let percentage = String(format: "%.1f", slice.percentage * 100)
-        let valueText = MoneyFormatter.formatTRY(slice.value)
+        let valueText = MoneyFormatter.formatUSD(slice.value)
         return "\(percentage)%  •  \(valueText)"
     }
 }
@@ -139,7 +139,7 @@ struct AllocationPieChartView: View {
 // MARK: - Portfolio Line Chart
 struct PortfolioLineChartView: View {
     let data: PriceSeries
-    
+
     var body: some View {
         VStack {
             if data.points.isEmpty {
@@ -152,7 +152,7 @@ struct PortfolioLineChartView: View {
                 HStack {
                     ForEach(data.points.prefix(10)) { point in
                         VStack {
-                            Text("₺\(point.priceTRY)")
+                            Text("$\(point.priceTRY)")
                                 .font(.caption)
                             Circle()
                                 .fill(Color.blue)

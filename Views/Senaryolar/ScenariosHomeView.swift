@@ -95,9 +95,41 @@ final class ScenariosHomeViewModel: ObservableObject {
                 self.scenarios = userScenarios.map { $0.toCardData() }
                 self.isLoading = false
                 logger.info("Loaded \(userScenarios.count) scenarios from Supabase")
+            } catch let decodingError as DecodingError {
+                // Detailed decoding error logging
+                switch decodingError {
+                case .typeMismatch(let type, let context):
+                    logger.error(
+                        "DecodingError.typeMismatch: \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")) - \(context.debugDescription)"
+                    )
+                    self.errorMessage =
+                        "Failed to load scenarios: Type mismatch at \(context.codingPath.last?.stringValue ?? "unknown")"
+                case .valueNotFound(let type, let context):
+                    logger.error(
+                        "DecodingError.valueNotFound: \(type) at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")) - \(context.debugDescription)"
+                    )
+                    self.errorMessage =
+                        "Failed to load scenarios: Missing value at \(context.codingPath.last?.stringValue ?? "unknown")"
+                case .keyNotFound(let key, let context):
+                    logger.error(
+                        "DecodingError.keyNotFound: \(key.stringValue) at \(context.codingPath.map { $0.stringValue }.joined(separator: ".")) - \(context.debugDescription)"
+                    )
+                    self.errorMessage = "Failed to load scenarios: Missing key '\(key.stringValue)'"
+                case .dataCorrupted(let context):
+                    logger.error(
+                        "DecodingError.dataCorrupted: \(context.codingPath.map { $0.stringValue }.joined(separator: ".")) - \(context.debugDescription)"
+                    )
+                    self.errorMessage = "Failed to load scenarios: \(context.debugDescription)"
+                @unknown default:
+                    logger.error("DecodingError.unknown: \(decodingError.localizedDescription)")
+                    self.errorMessage =
+                        "Failed to load scenarios: \(decodingError.localizedDescription)"
+                }
+                self.isLoading = false
             } catch {
                 logger.error("Failed to load scenarios: \(error.localizedDescription)")
-                self.errorMessage = "Failed to load scenarios"
+                logger.error("Full error: \(String(describing: error))")
+                self.errorMessage = "Failed to load scenarios: \(error.localizedDescription)"
                 self.isLoading = false
             }
         }

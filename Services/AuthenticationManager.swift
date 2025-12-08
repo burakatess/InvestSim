@@ -84,7 +84,7 @@ enum SubscriptionPlan: String, CaseIterable, Codable {
         case .free:
             return "Ücretsiz"
         case .premium:
-            return "₺29.99/ay"
+            return "$29.99/mo"
         }
     }
 }

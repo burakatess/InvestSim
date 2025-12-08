@@ -7,7 +7,7 @@ struct PricePoint: Identifiable, Codable, Equatable {
     let currency: String
     let priceTRY: Decimal
 
-    init(date: Date, price: Decimal, currency: String = "TRY") {
+    init(date: Date, price: Decimal, currency: String = "USD") {
         self.date = date
         self.price = price
         self.currency = currency
@@ -29,6 +29,6 @@ extension PricePoint {
         formatter.currencyCode = currency
         formatter.minimumFractionDigits = 2
         formatter.maximumFractionDigits = 2
-        return formatter.string(from: price as NSDecimalNumber) ?? "₺0.00"
+        return formatter.string(from: price as NSDecimalNumber) ?? "$0.00"
     }
 }

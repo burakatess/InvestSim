@@ -129,11 +129,11 @@ struct ModernPortfolioCard: View {
     }
 
     private var formattedAnimatedValue: String {
-        MoneyFormatter.formatTRY(Decimal(max(animatedValue, 0)))
+        MoneyFormatter.formatUSD(Decimal(max(animatedValue, 0)))
     }
 
     private var formattedAnimatedGain: String {
-        let amount = MoneyFormatter.formatTRY(Decimal(abs(animatedGain)))
+        let amount = MoneyFormatter.formatUSD(Decimal(abs(animatedGain)))
         if animatedGain > 0 {
             return "+\(amount)"
         } else if animatedGain < 0 {

@@ -4,13 +4,16 @@ struct ModernCard<Content: View>: View {
     let content: Content
     let style: CardStyle
     let action: (() -> Void)?
-    
-    init(style: CardStyle = .default, action: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
+
+    init(
+        style: CardStyle = .default, action: (() -> Void)? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
         self.style = style
         self.action = action
         self.content = content()
     }
-    
+
     var body: some View {
         Group {
             if let action = action {
@@ -44,7 +47,7 @@ struct CardStyle {
     let cornerRadius: CGFloat
     let padding: CGFloat
     let shadow: ShadowStyle
-    
+
     static let `default` = CardStyle(
         backgroundColor: .adaptiveSecondaryBackground,
         borderColor: .borderLight,
@@ -53,7 +56,7 @@ struct CardStyle {
         padding: 16,
         shadow: .small
     )
-    
+
     static let elevated = CardStyle(
         backgroundColor: .adaptiveSecondaryBackground,
         borderColor: .clear,
@@ -62,7 +65,7 @@ struct CardStyle {
         padding: 20,
         shadow: .medium
     )
-    
+
     static let outlined = CardStyle(
         backgroundColor: .clear,
         borderColor: .borderMedium,
@@ -71,7 +74,7 @@ struct CardStyle {
         padding: 16,
         shadow: .none
     )
-    
+
     static let filled = CardStyle(
         backgroundColor: .primaryBlue.opacity(0.1),
         borderColor: .primaryBlue.opacity(0.3),
@@ -90,11 +93,11 @@ struct InfoCard: View {
     let value: String
     let change: String?
     let changeType: ChangeType
-    
+
     enum ChangeType {
         case positive, negative, neutral
     }
-    
+
     var body: some View {
         ModernCard(style: .default) {
             HStack(spacing: 12) {
@@ -105,28 +108,28 @@ struct InfoCard: View {
                     .frame(width: 40, height: 40)
                     .background(Color.primaryBlue.opacity(0.1))
                     .cornerRadius(8)
-                
+
                 // Content
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(.titleSmall)
                         .foregroundColor(.adaptiveLabel)
-                    
+
                     if let subtitle = subtitle {
                         Text(subtitle)
                             .font(.bodySmall)
                             .foregroundColor(.adaptiveSecondaryLabel)
                     }
                 }
-                
+
                 Spacer()
-                
+
                 // Value and Change
                 VStack(alignment: .trailing, spacing: 4) {
                     Text(value)
                         .font(.moneyMedium)
                         .foregroundColor(.adaptiveLabel)
-                    
+
                     if let change = change {
                         HStack(spacing: 4) {
                             Image(systemName: changeType == .positive ? "arrow.up" : "arrow.down")
@@ -148,7 +151,7 @@ struct InfoCard: View {
             title: "Toplam Portföy",
             subtitle: "Güncel değer",
             icon: "chart.pie.fill",
-            value: "₺125,430",
+            value: "$125,430",
             change: "+2.5%",
             changeType: .positive
         )

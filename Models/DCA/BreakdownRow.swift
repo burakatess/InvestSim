@@ -11,7 +11,7 @@ public struct BreakdownRow: Codable, Equatable, Identifiable {
     public let currentValueTRY: Decimal
     public let pnlTRY: Decimal
     public let pnlPct: Decimal
-    
+
     public init(
         symbol: String,
         totalUnits: Decimal,
@@ -37,43 +37,43 @@ extension BreakdownRow {
     public var totalInvestmentTRY: Decimal {
         return totalUnits * avgCostTRY
     }
-    
+
     /// Kar/zarar durumunu döndürür
     public var isProfit: Bool {
         return pnlTRY > 0
     }
-    
+
     /// Zarar durumunu döndürür
     public var isLoss: Bool {
         return pnlTRY < 0
     }
-    
+
     /// Başabaş durumunu döndürür
     public var isBreakEven: Bool {
         return pnlTRY == 0
     }
-    
+
     /// Kar/zarar yüzdesini yüzde formatında döndürür
     public var pnlPctFormatted: String {
         return String(format: "%.2f%%", pnlPct.doubleValue)
     }
-    
+
     /// Kar/zarar miktarını formatlanmış string olarak döndürür
     public var pnlTRYFormatted: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "TRY"
+        formatter.currencyCode = "USD"
         formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: pnlTRY as NSDecimalNumber) ?? "0₺"
+        return formatter.string(from: pnlTRY as NSDecimalNumber) ?? "$0"
     }
-    
+
     /// Güncel değeri formatlanmış string olarak döndürür
     public var currentValueFormatted: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "TRY"
+        formatter.currencyCode = "USD"
         formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: currentValueTRY as NSDecimalNumber) ?? "0₺"
+        return formatter.string(from: currentValueTRY as NSDecimalNumber) ?? "$0"
     }
 }
 
@@ -90,7 +90,7 @@ extension BreakdownRow {
         let totalInvestmentTRY = totalUnits * avgCostTRY
         let pnlTRY = currentValueTRY - totalInvestmentTRY
         let pnlPct = totalInvestmentTRY > 0 ? (pnlTRY / totalInvestmentTRY) * 100 : 0
-        
+
         return BreakdownRow(
             symbol: symbol,
             totalUnits: totalUnits,
@@ -104,5 +104,5 @@ extension BreakdownRow {
 }
 
 // MARK: - Decimal Extension for doubleValue
-private extension Decimal {
+extension Decimal {
 }

@@ -256,7 +256,7 @@ final class DashboardVM: ObservableObject {
         isAddingAssetInFlight = true
         defer { isAddingAssetInFlight = false }
         print("🔥🔥🔥 PORTFÖY AYRIŞTIRMALI addAsset SİSTEMİ! 🔥🔥🔥")
-        print("🔥 Varlık: \(asset) - Miktar: \(quantity) adet - Fiyat: ₺\(unitPrice)")
+        print("🔥 Varlık: \(asset) - Miktar: \(quantity) adet - Fiyat: $\(unitPrice)")
         print("📊 Mevcut portföy: \(portfolioManager.currentPortfolio?.name ?? "Bilinmiyor")")
 
         guard let currentPortfolioId = portfolioManager.currentPortfolioId else {
@@ -364,8 +364,8 @@ final class DashboardVM: ObservableObject {
             let newActivity = ActivityItem(
                 type: .buy,
                 title: "\(assetName(asset)) Alımı",
-                subtitle: "\(quantity) adet @ ₺\(String(format: "%.2f", unitPrice))",
-                value: "₺\(String(format: "%.2f", quantity * unitPrice))",
+                subtitle: "\(quantity) adet @ $\(String(format: "%.2f", unitPrice))",
+                value: "$\(String(format: "%.2f", quantity * unitPrice))",
                 date: date
             )
 
@@ -468,8 +468,8 @@ final class DashboardVM: ObservableObject {
             type: .sell,
             title: "\(assetName(assetCode)) Satışı",
             subtitle:
-                "\(String(format: "%.4f", quantity)) adet @ ₺\(String(format: "%.2f", unitPrice))",
-            value: "₺\(String(format: "%.2f", quantity * unitPrice))",
+                "\(String(format: "%.4f", quantity)) adet @ $\(String(format: "%.2f", unitPrice))",
+            value: "$\(String(format: "%.2f", quantity * unitPrice))",
             date: date
         )
 
@@ -588,7 +588,7 @@ final class DashboardVM: ObservableObject {
         // İşlemi recentTrades listesine ekle (zaten eklenmiş olmalı)
         // Bu fonksiyon sadece log için kullanılıyor
         print(
-            "💾 İşlem kaydedildi: \(trade.type == .buy ? "Alış" : "Satış") - \(trade.asset.rawValue) - \(trade.quantity) adet @ ₺\(trade.price)"
+            "💾 İşlem kaydedildi: \(trade.type == .buy ? "Alış" : "Satış") - \(trade.asset.rawValue) - \(trade.quantity) adet @ $\(trade.price)"
         )
     }
 
@@ -608,9 +608,9 @@ final class DashboardVM: ObservableObject {
     var totalInvestment: String {
         if case .success(let data) = state {
             return
-                "₺\(String(format: "%.2f", NSDecimalNumber(decimal: data.summary.totalCost).doubleValue))"
+                "$\(String(format: "%.2f", NSDecimalNumber(decimal: data.summary.totalCost).doubleValue))"
         }
-        return "₺0,00"
+        return "$0.00"
     }
 
     var assetCount: String {

@@ -81,27 +81,27 @@ extension SimulationResult {
     public var profitTRYFormatted: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "TRY"
+        formatter.currencyCode = "USD"
         formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: profitTRY as NSDecimalNumber) ?? "0₺"
+        return formatter.string(from: profitTRY as NSDecimalNumber) ?? "$0"
     }
 
     /// Yatırılan toplam miktarı formatlanmış string olarak döndürür
     public var investedTotalFormatted: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "TRY"
+        formatter.currencyCode = "USD"
         formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: investedTotalTRY as NSDecimalNumber) ?? "0₺"
+        return formatter.string(from: investedTotalTRY as NSDecimalNumber) ?? "$0"
     }
 
     /// Güncel değeri formatlanmış string olarak döndürür
     public var currentValueFormatted: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .currency
-        formatter.currencyCode = "TRY"
+        formatter.currencyCode = "USD"
         formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: currentValueTRY as NSDecimalNumber) ?? "0₺"
+        return formatter.string(from: currentValueTRY as NSDecimalNumber) ?? "$0"
     }
 
     /// Maksimum düşüşü formatlanmış string olarak döndürür
