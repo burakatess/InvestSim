@@ -322,7 +322,7 @@ struct GoogleButton: View {
                         )
                 }
 
-                Text("Google ile devam et")
+                Text("Continue with Google")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.white)
             }
@@ -362,7 +362,7 @@ struct GuestButton: View {
                 Image(systemName: "person.fill.questionmark")
                     .font(.system(size: 16, weight: .medium))
 
-                Text("Misafir olarak devam et")
+                Text("Continue as Guest")
                     .font(.system(size: 15, weight: .bold))
             }
             .foregroundColor(.accentCyan)
@@ -465,7 +465,7 @@ struct WelcomeView: View {
                     .font(.system(size: 32, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
 
-                Text("Akıllı yatırım, sadeleştirilmiş.")
+                Text("Smart investing, simplified.")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundColor(.white.opacity(0.7))
             }
@@ -479,11 +479,11 @@ struct WelcomeView: View {
         VStack(alignment: .leading, spacing: 20) {
             // Card Header
             VStack(alignment: .leading, spacing: 6) {
-                Text(isSignUp ? "Hesap Oluştur" : "Giriş Yap")
+                Text(isSignUp ? "Create Account" : "Sign In")
                     .font(.system(size: 22, weight: .bold))
                     .foregroundColor(.white)
 
-                Text(isSignUp ? "Yatırım yolculuğuna başla." : "Hesabına giriş yap.")
+                Text(isSignUp ? "Start your investment journey." : "Sign in to your account.")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
             }
@@ -493,7 +493,7 @@ struct WelcomeView: View {
                 if isSignUp {
                     PremiumInputField(
                         icon: "person.fill",
-                        placeholder: "Ad Soyad",
+                        placeholder: "Full Name",
                         text: $fullName,
                         isSecure: false,
                         isPasswordVisible: .constant(true),
@@ -504,7 +504,7 @@ struct WelcomeView: View {
 
                 PremiumInputField(
                     icon: "envelope.fill",
-                    placeholder: "E-posta adresi",
+                    placeholder: "Email address",
                     text: $email,
                     isSecure: false,
                     isPasswordVisible: .constant(true),
@@ -514,7 +514,7 @@ struct WelcomeView: View {
 
                 PremiumInputField(
                     icon: "lock.fill",
-                    placeholder: "Şifre",
+                    placeholder: "Password",
                     text: $password,
                     isSecure: true,
                     isPasswordVisible: $isPasswordVisible,
@@ -525,7 +525,7 @@ struct WelcomeView: View {
 
             // Primary Action Button
             GradientButton(
-                title: isSignUp ? "Hesap Oluştur" : "E-posta ile giriş yap",
+                title: isSignUp ? "Create Account" : "Sign in with Email",
                 action: primaryAction,
                 isDisabled: primaryDisabled
             )
@@ -539,8 +539,8 @@ struct WelcomeView: View {
             } label: {
                 Text(
                     isSignUp
-                        ? "Zaten hesabın var mı? **Giriş yap**"
-                        : "Hesabın yok mu? **Hızlıca oluştur**"
+                        ? "Already have an account? **Sign in**"
+                        : "Don't have an account? **Create one**"
                 )
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white.opacity(0.7))
@@ -553,7 +553,7 @@ struct WelcomeView: View {
                     .fill(Color.white.opacity(0.1))
                     .frame(height: 1)
 
-                Text("veya")
+                Text("or")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white.opacity(0.4))
 
@@ -577,11 +577,11 @@ struct WelcomeView: View {
     private var guestSection: some View {
         VStack(spacing: 16) {
             VStack(spacing: 6) {
-                Text("Hızlıca keşfetmek ister misin?")
+                Text("Want to explore quickly?")
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white.opacity(0.9))
 
-                Text("Kayıt olmadan portföy ve fiyatları incele.")
+                Text("Browse portfolios and prices without signing up.")
                     .font(.system(size: 13, weight: .medium))
                     .foregroundColor(.white.opacity(0.5))
             }
@@ -670,7 +670,7 @@ struct WelcomeView: View {
                                 .progressViewStyle(CircularProgressViewStyle(tint: .white))
                                 .scaleEffect(1.3)
 
-                            Text("Giriş yapılıyor...")
+                            Text("Signing in...")
                                 .font(.system(size: 15, weight: .medium))
                                 .foregroundColor(.white.opacity(0.8))
                         }
@@ -704,7 +704,7 @@ struct WelcomeView: View {
         let trimmedEmail = email.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedEmail.isEmpty, password.count >= 4 else {
             withAnimation(.spring()) {
-                localError = "Lütfen geçerli bir e-posta ve en az 4 karakterli şifre girin."
+                localError = "Please enter a valid email and password (at least 4 characters)."
             }
             return
         }
@@ -714,7 +714,7 @@ struct WelcomeView: View {
                 await authManager.signUpWithEmail(
                     email: trimmedEmail,
                     password: password,
-                    name: fullName.isEmpty ? "Yeni Yatırımcı" : fullName
+                    name: fullName.isEmpty ? "New Investor" : fullName
                 )
             }
         } else {

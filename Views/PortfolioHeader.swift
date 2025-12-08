@@ -261,6 +261,7 @@ struct PortfolioMenuView: View {
     @State private var isDarkMode = false
     @State private var menuErrorMessage: String?
     @State private var showingErrorAlert = false
+    @State private var portfolioToEdit: Portfolio?
 
     var body: some View {
         NavigationView {
@@ -336,12 +337,7 @@ struct PortfolioMenuView: View {
                                     isSelected: portfolio.id == portfolioManager.currentPortfolioId,
                                     portfolioManager: portfolioManager,
                                     onEdit: {
-                                        presentationMode.wrappedValue.dismiss()
-                                        // Delay to allow menu to dismiss before showing edit sheet
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                            selectedPortfolio = portfolio
-                                            showingEditPortfolio = true
-                                        }
+                                        portfolioToEdit = portfolio
                                     },
                                     onDelete: {
                                         guard portfolioManager.canDeletePortfolio(portfolio) else {
@@ -387,6 +383,12 @@ struct PortfolioMenuView: View {
                 title: Text("Operation Failed"),
                 message: Text(menuErrorMessage ?? ""),
                 dismissButton: .default(Text("OK"))
+            )
+        }
+        .sheet(item: $portfolioToEdit) { portfolio in
+            EditPortfolioView(
+                portfolio: portfolio,
+                portfolioManager: portfolioManager
             )
         }
 
@@ -600,106 +602,99 @@ struct AddPortfolioView: View {
 struct EditPortfolioView: View {
     let portfolio: Portfolio
     @ObservedObject var portfolioManager: PortfolioManager
-    @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var name: String = ""
     @State private var selectedColor: PortfolioColor = .blue
-    @State private var showDeleteAlert = false
-    @State private var errorMessage: String?
 
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var canSave: Bool { !trimmedName.isEmpty }
 
-    func colorOption(for color: PortfolioColor) -> some View {
-        Button {
-            selectedColor = color
-        } label: {
-            VStack(spacing: 8) {
-                Circle()
-                    .fill(color.color)
-                    .frame(width: 44, height: 44)
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white, lineWidth: 2)
-                            .opacity(selectedColor == color ? 1 : 0)
-                    )
-                Text(color.localizedName)
-                    .font(.caption)
-                    .foregroundColor(PortfolioSheetColors.textSecondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(12)
-            .background(
-                LinearGradient(
-                    colors: [PortfolioSheetColors.cardTop, PortfolioSheetColors.cardBottom],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .stroke(
-                        selectedColor == color ? color.color : PortfolioSheetColors.border,
-                        lineWidth: 1.5)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
     var body: some View {
-        NavigationView {
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        PortfolioSheetColors.backgroundTop, PortfolioSheetColors.backgroundBottom,
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                .ignoresSafeArea()
+        ZStack {
+            // Background
+            LinearGradient(
+                colors: [Color(hex: "#050B1F"), Color(hex: "#111736"), Color(hex: "#0A1128")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(.white.opacity(0.7))
+
+                    Spacer()
+
+                    Text("Edit Portfolio")
+                        .font(.headline)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    Button("Save") {
+                        var updated = portfolio
+                        updated.name = trimmedName
+                        updated.color = selectedColor
+                        portfolioManager.updatePortfolio(updated)
+                        dismiss()
+                    }
+                    .disabled(!canSave)
+                    .foregroundColor(canSave ? .blue : .gray)
+                }
+                .padding()
+                .background(Color.black.opacity(0.3))
 
                 ScrollView {
-                    VStack(alignment: .leading, spacing: 24) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Portfolio Information")
-                                .font(.title3.bold())
-                                .foregroundColor(PortfolioSheetColors.textPrimary)
-                            Text(
-                                "Update portfolio name and choose a theme. Changes reflect immediately."
-                            )
-                            .font(.callout)
-                            .foregroundColor(PortfolioSheetColors.textSecondary)
-                        }
-
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Portfolio Name")
-                                .font(.headline)
-                                .foregroundColor(PortfolioSheetColors.textPrimary)
-                            TextField("Portfolio name", text: $name)
-                                .padding()
-                                .foregroundColor(PortfolioSheetColors.textPrimary)
+                    VStack(spacing: 24) {
+                        // Preview
+                        VStack(spacing: 12) {
+                            Image(systemName: selectedColor.icon)
+                                .font(.system(size: 48))
+                                .foregroundColor(.white)
+                                .frame(width: 80, height: 80)
                                 .background(
-                                    LinearGradient(
-                                        colors: [
-                                            PortfolioSheetColors.cardTop,
-                                            PortfolioSheetColors.cardBottom,
-                                        ],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                    .clipShape(
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                    Circle()
+                                        .fill(selectedColor.color.opacity(0.3))
+                                )
+
+                            Text(trimmedName.isEmpty ? "Portfolio Name" : trimmedName)
+                                .font(.title2.bold())
+                                .foregroundColor(.white)
+                        }
+                        .padding(.top, 20)
+
+                        // Name Input
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Portfolio Name")
+                                .font(.subheadline.bold())
+                                .foregroundColor(.white.opacity(0.7))
+
+                            TextField("", text: $name)
+                                .placeholder(when: name.isEmpty) {
+                                    Text("Enter portfolio name").foregroundColor(
+                                        .white.opacity(0.4))
+                                }
+                                .padding()
+                                .foregroundColor(.white)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(Color.white.opacity(0.1))
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(PortfolioSheetColors.border, lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.white.opacity(0.2), lineWidth: 1)
                                 )
                         }
+                        .padding(.horizontal, 20)
 
+                        // Color Selection
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Theme Color")
-                                .font(.headline)
-                                .foregroundColor(PortfolioSheetColors.textPrimary)
+                                .font(.subheadline.bold())
+                                .foregroundColor(.white.opacity(0.7))
+                                .padding(.horizontal, 20)
 
                             LazyVGrid(
                                 columns: Array(
@@ -707,115 +702,62 @@ struct EditPortfolioView: View {
                                 spacing: 12
                             ) {
                                 ForEach(PortfolioColor.allCases, id: \.self) { color in
-                                    colorOption(for: color)
-                                }
-                            }
-                        }
+                                    Button {
+                                        selectedColor = color
+                                    } label: {
+                                        VStack(spacing: 6) {
+                                            Circle()
+                                                .fill(color.color)
+                                                .frame(width: 44, height: 44)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(
+                                                            Color.white,
+                                                            lineWidth: selectedColor == color
+                                                                ? 3 : 0)
+                                                )
 
-                        if let errorMessage {
-                            Text(errorMessage)
-                                .font(.subheadline)
-                                .foregroundColor(.orange)
-                        }
-
-                        Button {
-                            withAnimation {
-                                showDeleteAlert = true
-                            }
-                        } label: {
-                            Label("Delete Portfolio", systemImage: "trash")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .foregroundColor(.red)
-                                .background(
-                                    LinearGradient(
-                                        colors: [Color.red.opacity(0.25), Color.red.opacity(0.1)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                    .clipShape(
-                                        RoundedRectangle(cornerRadius: 16, style: .continuous))
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(Color.red.opacity(0.4), lineWidth: 1)
-                                )
-                        }
-                        .disabled(!portfolioManager.canDeletePortfolio(portfolio))
-                        .opacity(portfolioManager.canDeletePortfolio(portfolio) ? 1 : 0.4)
-
-                        Button {
-                            var updated = portfolio
-                            updated.name = trimmedName
-                            updated.color = selectedColor
-                            portfolioManager.updatePortfolio(updated)
-                            presentationMode.wrappedValue.dismiss()
-                        } label: {
-                            Text("Save Changes")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 52)
-                                .foregroundColor(.white)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(
-                                            canSave
-                                                ? LinearGradient(
-                                                    colors: [Color.blue, Color.blue.opacity(0.8)],
-                                                    startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing)
-                                                : LinearGradient(
-                                                    colors: [
-                                                        Color.gray.opacity(0.6),
-                                                        Color.gray.opacity(0.4),
-                                                    ], startPoint: .topLeading,
-                                                    endPoint: .bottomTrailing)
+                                            Text(color.localizedName)
+                                                .font(.caption2)
+                                                .foregroundColor(.white.opacity(0.7))
+                                        }
+                                        .padding(8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(
+                                                    selectedColor == color
+                                                        ? Color.white.opacity(0.1) : Color.clear)
                                         )
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                        .stroke(PortfolioSheetColors.border, lineWidth: 1)
-                                )
-                        }
-                        .disabled(!canSave)
-                    }
-                    .padding(24)
-                    .navigationTitle("Edit Portfolio")
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarLeading) {
-                            Button("Close") { presentationMode.wrappedValue.dismiss() }
-                        }
-                    }
-                    .alert(isPresented: $showDeleteAlert) {
-                        Alert(
-                            title: Text("Delete Portfolio"),
-                            message: Text(
-                                "Are you sure you want to delete portfolio '\(portfolio.name)'? This action will permanently remove all data associated with it."
-                            ),
-                            primaryButton: .destructive(Text("Delete")) {
-                                do {
-                                    try portfolioManager.deletePortfolio(portfolio)
-                                    portfolioManager.clearPortfolioData(for: portfolio.id)
-                                    presentationMode.wrappedValue.dismiss()
-                                } catch {
-                                    errorMessage =
-                                        (error as? LocalizedError)?.errorDescription
-                                        ?? error.localizedDescription
+                                    }
+                                    .buttonStyle(.plain)
                                 }
-                            },
-                            secondaryButton: .cancel(Text("İptal"))
-                        )
+                            }
+                            .padding(.horizontal, 20)
+                        }
+
+                        Spacer(minLength: 40)
                     }
-                }
-                .onAppear {
-                    name = portfolio.name
-                    selectedColor = portfolio.color
                 }
             }
-
         }
+        .onAppear {
+            name = portfolio.name
+            selectedColor = portfolio.color
+        }
+    }
+}
 
+// Placeholder extension for TextField
+extension View {
+    func placeholder<Content: View>(
+        when shouldShow: Bool,
+        alignment: Alignment = .leading,
+        @ViewBuilder placeholder: () -> Content
+    ) -> some View {
+        ZStack(alignment: alignment) {
+            placeholder().opacity(shouldShow ? 1 : 0)
+            self
+        }
     }
 }
 

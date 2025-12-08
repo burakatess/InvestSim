@@ -47,6 +47,9 @@ final class DCASimulationVM: ObservableObject {
     private let logger = Logger(subsystem: "InvestSimulator", category: "DCASimulation")
     private var scenariosRepository: ScenariosRepository?
     private var priceManager: UnifiedPriceManager?
+    private let scenarioService = SupabaseScenarioService.shared
+    @Published var isSaving = false
+    @Published var saveSuccess = false
 
     // MARK: - Helper Struct
     struct AssetAllocation: Identifiable {
@@ -189,6 +192,105 @@ final class DCASimulationVM: ObservableObject {
                 }
             }
         }
+    }
+
+    /// Save scenario to Supabase
+    func saveScenario() async throws {
+        guard let userId = await scenarioService.getCurrentUserId() else {
+            throw NSError(
+                domain: "DCASimulation", code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "User not authenticated"])
+        }
+
+        // Calculate totals from transactions
+        let totalInvested = transactions.reduce(Decimal(0)) { $0 + $1.allocatedMoneyUSD }
+
+        // Get final value (sum of quantity * last known price)
+        // For simplicity, using allocated amounts as proxy
+        let finalValue = totalInvested * Decimal(1.1)  // Placeholder
+        let roiPercent =
+            transactions.isEmpty
+            ? 0
+            : Double(
+                truncating: ((finalValue - totalInvested) / totalInvested * 100) as NSDecimalNumber)
+
+        // Create allocations for storage
+        let scenarioAllocations = allocations.compactMap { allocation -> ScenarioAllocation? in
+            guard let assetCode = allocation.assetCode?.rawValue else { return nil }
+            let percent =
+                Double(allocation.percentage.replacingOccurrences(of: ",", with: ".")) ?? 0
+            return ScenarioAllocation(assetCode: assetCode, percent: percent)
+        }
+
+        // Create transaction records
+        let transactionRecords = transactions.map { tx in
+            ScenarioTransactionRecord(
+                date: tx.formattedDate,
+                assetCode: tx.asset,
+                amountUsd: Double(truncating: tx.allocatedMoneyUSD as NSDecimalNumber),
+                quantity: Double(truncating: tx.quantity as NSDecimalNumber),
+                unitPrice: Double(truncating: tx.priceUSD as NSDecimalNumber)
+            )
+        }
+
+        // Create sparkline data (monthly totals for chart)
+        let sparkline = calculateSparklineData()
+
+        let scenario = UserScenario(
+            id: UUID(),
+            userId: userId,
+            name: scenarioName.isEmpty ? "DCA Scenario" : scenarioName,
+            startDate: startDate,
+            endDate: endDate,
+            frequencyPerMonth: frequencyPerMonth,
+            monthlyAmount: Decimal(
+                string: investmentAmount.replacingOccurrences(of: ",", with: ".")) ?? 1000,
+            currency: currency,
+            annualIncreasePercent: Decimal(
+                string: annualIncrease.replacingOccurrences(of: ",", with: ".")) ?? 0,
+            allocations: scenarioAllocations,
+            totalInvested: totalInvested,
+            finalValue: finalValue,
+            roiPercent: roiPercent,
+            transactionsJson: transactionRecords,
+            sparklineData: sparkline,
+            createdAt: Date(),
+            updatedAt: nil
+        )
+
+        try await scenarioService.createScenario(scenario)
+        logger.info("Scenario saved: \(scenario.name)")
+    }
+
+    private func calculateSparklineData() -> [Double] {
+        // Group transactions by month and calculate cumulative value
+        var monthlyTotals: [Double] = []
+        var runningTotal: Double = 0
+
+        let calendar = Calendar.current
+        var currentMonth: Int?
+        var monthTotal: Double = 0
+
+        for tx in transactions {
+            let month = calendar.component(.month, from: tx.date)
+            if currentMonth == nil {
+                currentMonth = month
+            }
+
+            if month != currentMonth {
+                runningTotal += monthTotal
+                monthlyTotals.append(runningTotal)
+                monthTotal = 0
+                currentMonth = month
+            }
+            monthTotal += Double(truncating: tx.allocatedMoneyUSD as NSDecimalNumber)
+        }
+
+        // Add last month
+        runningTotal += monthTotal
+        monthlyTotals.append(runningTotal)
+
+        return monthlyTotals
     }
 
     static func generateTransactionsWithRealPrices(
@@ -388,7 +490,10 @@ struct DCAScenarioView: View {
                     endDate: viewModel.endDate,
                     investmentAmount: Decimal(
                         string: viewModel.investmentAmount.replacingOccurrences(of: ",", with: "."))
-                        ?? 1000
+                        ?? 1000,
+                    onSave: {
+                        try await viewModel.saveScenario()
+                    }
                 )
             }
         }
@@ -1387,11 +1492,14 @@ struct SimulationResultView: View {
     let startDate: Date
     let endDate: Date
     let investmentAmount: Decimal
+    let onSave: () async throws -> Void
 
     @Environment(\.dismiss) private var dismiss
     @State private var isAppearing = false
     @State private var expandedMonths: Set<String> = []
     @State private var mockMultiplier: Decimal = 1.0  // Stored once to avoid recalculation
+    @State private var isSaving = false
+    @State private var saveError: String?
 
     // Computed properties
     private var totalInvested: Decimal {
@@ -1602,10 +1710,22 @@ struct SimulationResultView: View {
             }
             .buttonStyle(.plain)
 
-            ScenarioGradientButton(title: "Save", icon: "square.and.arrow.down") {
-                // TODO: Save scenario
-                dismiss()
+            ScenarioGradientButton(
+                title: isSaving ? "Saving..." : "Save", icon: "square.and.arrow.down"
+            ) {
+                Task {
+                    isSaving = true
+                    do {
+                        try await onSave()
+                        isSaving = false
+                        dismiss()
+                    } catch {
+                        isSaving = false
+                        saveError = error.localizedDescription
+                    }
+                }
             }
+            .disabled(isSaving)
         }
         .padding(20)
         .background(

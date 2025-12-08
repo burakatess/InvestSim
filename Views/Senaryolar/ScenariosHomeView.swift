@@ -61,9 +61,10 @@ final class ScenariosHomeViewModel: ObservableObject {
     @Published var showLimitAlert = false
     @Published var showDeleteConfirmation = false
     @Published var scenarioToDelete: ScenarioCardData?
+    @Published var errorMessage: String?
 
     private var scenariosRepository: ScenariosRepository?
-    private var hasLoaded = false
+    private let scenarioService = SupabaseScenarioService.shared
     private let logger = Logger(subsystem: "InvestSimulator", category: "ScenariosHome")
 
     static let maxScenarios = 10
@@ -85,19 +86,47 @@ final class ScenariosHomeViewModel: ObservableObject {
     }
 
     func loadScenarios() {
-        // Only load mock data once to preserve user deletions
-        guard !hasLoaded else { return }
-
         isLoading = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.scenarios = Self.mockScenarios
-            self.isLoading = false
-            self.hasLoaded = true
+        errorMessage = nil
+
+        Task { @MainActor in
+            do {
+                let userScenarios = try await scenarioService.fetchScenarios()
+                self.scenarios = userScenarios.map { $0.toCardData() }
+                self.isLoading = false
+                logger.info("Loaded \(userScenarios.count) scenarios from Supabase")
+            } catch {
+                logger.error("Failed to load scenarios: \(error.localizedDescription)")
+                self.errorMessage = "Failed to load scenarios"
+                self.isLoading = false
+            }
         }
     }
 
     func deleteScenario(_ scenario: ScenarioCardData) {
-        scenarios.removeAll { $0.id == scenario.id }
+        Task { @MainActor in
+            do {
+                try await scenarioService.deleteScenario(id: scenario.id)
+                scenarios.removeAll { $0.id == scenario.id }
+                logger.info("Deleted scenario: \(scenario.name)")
+            } catch {
+                logger.error("Failed to delete scenario: \(error.localizedDescription)")
+                errorMessage = "Failed to delete scenario"
+            }
+        }
+    }
+
+    func addScenario(_ scenario: UserScenario) {
+        Task { @MainActor in
+            do {
+                try await scenarioService.createScenario(scenario)
+                scenarios.insert(scenario.toCardData(), at: 0)
+                logger.info("Created scenario: \(scenario.name)")
+            } catch {
+                logger.error("Failed to create scenario: \(error.localizedDescription)")
+                errorMessage = "Failed to save scenario"
+            }
+        }
     }
 
     func checkLimitAndProceed() -> Bool {
@@ -107,35 +136,6 @@ final class ScenariosHomeViewModel: ObservableObject {
             showLimitAlert = true
             return false
         }
-    }
-
-    static var mockScenarios: [ScenarioCardData] {
-        [
-            ScenarioCardData(
-                id: UUID(),
-                name: "BTC DCA 2023",
-                startDate: Date().addingTimeInterval(-365 * 24 * 3600),
-                endDate: Date(),
-                frequencyPerMonth: 2,
-                totalInvestedUSD: 24000,
-                finalValueUSD: 32400,
-                roiPercent: 35.0,
-                sparklineData: [100, 105, 98, 112, 120, 115, 130, 128, 135],
-                createdAt: Date()
-            ),
-            ScenarioCardData(
-                id: UUID(),
-                name: "Altın + Hisse Karışık",
-                startDate: Date().addingTimeInterval(-180 * 24 * 3600),
-                endDate: Date(),
-                frequencyPerMonth: 1,
-                totalInvestedUSD: 12000,
-                finalValueUSD: 11400,
-                roiPercent: -5.0,
-                sparklineData: [100, 97, 95, 92, 94, 96, 95],
-                createdAt: Date().addingTimeInterval(-86400)
-            ),
-        ]
     }
 }
 

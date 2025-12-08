@@ -5,6 +5,17 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+interface PriceHistoryRecord {
+    asset_id: string
+    date: string
+    open: number
+    high: number
+    low: number
+    close: number
+    volume: number | null
+    provider: string
+}
+
 Deno.serve(async (req) => {
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
@@ -22,11 +33,11 @@ Deno.serve(async (req) => {
         const startDate = new Date()
         startDate.setDate(startDate.getDate() - days)
 
-        // Fetch metal assets
+        // Fetch metal assets - use symbol and asset_class
         const { data: assets, error: assetsError } = await supabase
             .from('assets')
-            .select('code, tefas_code')
-            .eq('category', 'metal')
+            .select('id, symbol, provider_symbol')
+            .eq('asset_class', 'metal')
 
         if (assetsError) throw assetsError
         if (!assets || assets.length === 0) {
@@ -41,59 +52,55 @@ Deno.serve(async (req) => {
         const fxResponse = await fetch(fxUrl)
         const fxData = await fxResponse.json()
 
-        const historicalPrices = []
+        const priceRecords: PriceHistoryRecord[] = []
 
-        // For demo: using approximate metal prices in USD
-        // In production, fetch from metals.dev or similar API
+        // Reference metal prices in USD (approximate averages)
+        // XAUUSD format symbols
         const metalPricesUSD: Record<string, number> = {
-            'XAU': 2050.00,  // Gold
-            'XAG': 24.50,    // Silver
-            'XPT': 920.00,   // Platinum
-            'XPD': 1050.00,  // Palladium
-            'XCU': 3.85,     // Copper
+            'XAUUSD': 2050.00,   // Gold
+            'XAGUSD': 24.50,    // Silver
+            'XPTUSD': 920.00,   // Platinum
+            'XAU': 2050.00,
+            'XAG': 24.50,
+            'XPT': 920.00,
         }
 
         // Process each date
         for (const [date, rates] of Object.entries(fxData.rates)) {
-            const usdToTry = (rates as any).TRY
-
             for (const asset of assets) {
-                const metalCode = asset.tefas_code || asset.code
-                const priceUSD = metalPricesUSD[metalCode]
+                const symbol = asset.symbol
+                const priceUSD = metalPricesUSD[symbol]
 
-                if (priceUSD && usdToTry) {
-                    const priceTRY = priceUSD * usdToTry
-
-                    historicalPrices.push({
-                        asset_code: asset.code,
+                if (priceUSD) {
+                    priceRecords.push({
+                        asset_id: asset.id,
                         date: date,
-                        open: priceTRY,
-                        high: priceTRY,
-                        low: priceTRY,
-                        close: priceTRY,
+                        open: priceUSD,
+                        high: priceUSD,
+                        low: priceUSD,
+                        close: priceUSD,
                         volume: null,
-                        category: 'metal',
-                        provider: 'frankfurter-fx',
+                        provider: 'reference-price',
                     })
                 }
             }
         }
 
-        // Insert in batches
+        // Insert in batches to price_history table
         const batchSize = 1000
         let inserted = 0
 
-        for (let i = 0; i < historicalPrices.length; i += batchSize) {
-            const batch = historicalPrices.slice(i, i + batchSize)
+        for (let i = 0; i < priceRecords.length; i += batchSize) {
+            const batch = priceRecords.slice(i, i + batchSize)
 
             const { error: insertError } = await supabase
-                .from('historical_prices')
-                .upsert(batch, { onConflict: 'asset_code,date' })
+                .from('price_history')
+                .upsert(batch, { onConflict: 'asset_id,date' })
 
             if (insertError) throw insertError
 
             inserted += batch.length
-            console.log(`Inserted ${inserted}/${historicalPrices.length}`)
+            console.log(`Inserted ${inserted}/${priceRecords.length}`)
         }
 
         return new Response(
@@ -101,9 +108,9 @@ Deno.serve(async (req) => {
                 success: true,
                 assets: assets.length,
                 days: days,
-                total_records: historicalPrices.length,
+                total_records: priceRecords.length,
                 inserted: inserted,
-                note: 'Using reference USD prices with historical FX rates',
+                note: 'Using reference USD prices',
             }),
             {
                 headers: { ...corsHeaders, 'Content-Type': 'application/json' },

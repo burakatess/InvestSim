@@ -3,7 +3,7 @@
 
 CREATE TABLE IF NOT EXISTS historical_prices (
   id BIGSERIAL PRIMARY KEY,
-  asset_code TEXT NOT NULL REFERENCES assets(code) ON DELETE CASCADE,
+  asset_code TEXT NOT NULL,  -- No FK constraint for flexibility
   date DATE NOT NULL,
   
   -- OHLC data (Open, High, Low, Close)

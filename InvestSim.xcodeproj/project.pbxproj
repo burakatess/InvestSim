@@ -31,6 +31,7 @@
 		670BE8AE2EE4F14B0054A55D /* ScenarioResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8AC2EE4F14B0054A55D /* ScenarioResultView.swift */; };
 		670BE8B12EE513430054A55D /* SupabaseHistoricalPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8B02EE513430054A55D /* SupabaseHistoricalPriceService.swift */; };
 		670BE8B22EE513430054A55D /* HistoricalPriceProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8AF2EE513430054A55D /* HistoricalPriceProvider.swift */; };
+		670BE8B52EE647770054A55D /* SupabaseScenarioService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 670BE8B32EE647770054A55D /* SupabaseScenarioService.swift */; };
 		675049ED2EAA73BC00D18E1A /* ModernCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675049EA2EAA73BC00D18E1A /* ModernCard.swift */; };
 		675049EE2EAA73BC00D18E1A /* ModernButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675049E82EAA73BC00D18E1A /* ModernButton.swift */; };
 		675049F42EAA73C600D18E1A /* Spacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 675049F12EAA73C600D18E1A /* Spacing.swift */; };
@@ -152,6 +153,7 @@
 		670BE8AC2EE4F14B0054A55D /* ScenarioResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScenarioResultView.swift; sourceTree = "<group>"; };
 		670BE8AF2EE513430054A55D /* HistoricalPriceProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoricalPriceProvider.swift; sourceTree = "<group>"; };
 		670BE8B02EE513430054A55D /* SupabaseHistoricalPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseHistoricalPriceService.swift; sourceTree = "<group>"; };
+		670BE8B32EE647770054A55D /* SupabaseScenarioService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseScenarioService.swift; sourceTree = "<group>"; };
 		675049DA2EAA729C00D18E1A /* InvestSim.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InvestSim.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		675049E82EAA73BC00D18E1A /* ModernButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernButton.swift; sourceTree = "<group>"; };
 		675049EA2EAA73BC00D18E1A /* ModernCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernCard.swift; sourceTree = "<group>"; };
@@ -317,6 +319,14 @@
 				670BE8A02EE0F10A0054A55D /* PredictView.swift */,
 			);
 			path = Predict;
+			sourceTree = "<group>";
+		};
+		670BE8B42EE647770054A55D /* Scenarios */ = {
+			isa = PBXGroup;
+			children = (
+				670BE8B32EE647770054A55D /* SupabaseScenarioService.swift */,
+			);
+			path = Scenarios;
 			sourceTree = "<group>";
 		};
 		675049D12EAA729C00D18E1A = {
@@ -495,6 +505,7 @@
 		67504A442EAA73EF00D18E1A /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				670BE8B42EE647770054A55D /* Scenarios */,
 				670BE8722ED7C7CA0054A55D /* Auth */,
 				670BE86A2ED59B160054A55D /* SubscriptionManager.swift */,
 				670BE85C2ED1F7520054A55D /* AssetService.swift */,
@@ -809,6 +820,7 @@
 				67504AB92EAA752100D18E1A /* PortfolioHeader.swift in Sources */,
 				67504A832EAA73FA00D18E1A /* Notification+Names.swift in Sources */,
 				67504A842EAA73FA00D18E1A /* Decimal+DCA.swift in Sources */,
+				670BE8B52EE647770054A55D /* SupabaseScenarioService.swift in Sources */,
 				67504A852EAA73FA00D18E1A /* RetryPolicy.swift in Sources */,
 				67504A862EAA73FA00D18E1A /* IstanbulClock.swift in Sources */,
 				67504A872EAA73FA00D18E1A /* MetricsTracker.swift in Sources */,

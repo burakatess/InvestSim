@@ -2,6 +2,7 @@ import Foundation
 import Supabase
 
 /// Service to fetch historical prices from Supabase for DCA simulations
+/// Uses prices_history table (main historical data source with 49K+ records)
 final class SupabaseHistoricalPriceService: @unchecked Sendable {
     static let shared = SupabaseHistoricalPriceService()
 
@@ -15,33 +16,8 @@ final class SupabaseHistoricalPriceService: @unchecked Sendable {
         )
     }
 
-    /// Fetch historical price for a specific asset on a specific date
-    /// Falls back to nearest available date if exact date not found
-    func fetchPrice(assetCode: String, date: Date) async throws -> Decimal? {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-        let dateString = dateFormatter.string(from: date)
-
-        // Try exact date first
-        let response: [HistoricalPriceRecord] =
-            try await supabase
-            .from("historical_prices")
-            .select("close, date")
-            .eq("asset_code", value: assetCode)
-            .lte("date", value: dateString)
-            .order("date", ascending: false)
-            .limit(1)
-            .execute()
-            .value
-
-        if let record = response.first {
-            return record.close
-        }
-
-        return nil
-    }
-
     /// Fetch all historical prices for multiple assets in a date range
+    /// Uses prices_history table (main source) with fallback to price_history
     /// Returns: [AssetCode: [Date: Price]]
     func fetchPrices(
         assetCodes: [String],
@@ -55,25 +31,70 @@ final class SupabaseHistoricalPriceService: @unchecked Sendable {
 
         var results: [String: [Date: Decimal]] = [:]
 
+        // First get asset IDs for the symbols
+        let assetsResponse: [SimpleAssetRecord] =
+            try await supabase
+            .from("assets")
+            .select("id, symbol")
+            .in("symbol", values: assetCodes)
+            .execute()
+            .value
+
+        let symbolToId: [String: String] = Dictionary(
+            uniqueKeysWithValues: assetsResponse.map { ($0.symbol, $0.id) }
+        )
+
         // Fetch prices for each asset
         for assetCode in assetCodes {
-            let response: [HistoricalPriceRecord] =
+            guard let assetId = symbolToId[assetCode] else {
+                results[assetCode] = [:]
+                continue
+            }
+
+            var priceMap: [Date: Decimal] = [:]
+
+            // Try prices_history first (main table with 49K+ records)
+            let pricesHistoryResponse: [SimplePriceRecord] =
                 try await supabase
-                .from("historical_prices")
+                .from("prices_history")
                 .select("date, close")
-                .eq("asset_code", value: assetCode)
+                .eq("asset_id", value: assetId)
                 .gte("date", value: startString)
                 .lte("date", value: endString)
                 .order("date", ascending: true)
                 .execute()
                 .value
 
-            var priceMap: [Date: Decimal] = [:]
-            for record in response {
-                if let date = dateFormatter.date(from: record.dateString) {
-                    priceMap[date] = record.close
+            for record in pricesHistoryResponse {
+                if let date = dateFormatter.date(from: record.dateString),
+                    let closePrice = record.close
+                {
+                    priceMap[date] = Decimal(closePrice)
                 }
             }
+
+            // If no data found, try price_history (secondary table)
+            if priceMap.isEmpty {
+                let priceHistoryResponse: [SimplePriceRecord] =
+                    try await supabase
+                    .from("price_history")
+                    .select("date, close")
+                    .eq("asset_id", value: assetId)
+                    .gte("date", value: startString)
+                    .lte("date", value: endString)
+                    .order("date", ascending: true)
+                    .execute()
+                    .value
+
+                for record in priceHistoryResponse {
+                    if let date = dateFormatter.date(from: record.dateString),
+                        let closePrice = record.close
+                    {
+                        priceMap[date] = Decimal(closePrice)
+                    }
+                }
+            }
+
             results[assetCode] = priceMap
         }
 
@@ -105,9 +126,14 @@ final class SupabaseHistoricalPriceService: @unchecked Sendable {
     }
 }
 
-// MARK: - Historical Price Record (Supabase Response)
-private struct HistoricalPriceRecord: Codable {
-    let close: Decimal
+// MARK: - Response Models (unique names to avoid conflicts)
+private struct SimpleAssetRecord: Codable {
+    let id: String
+    let symbol: String
+}
+
+private struct SimplePriceRecord: Codable {
+    let close: Double?
     let dateString: String
 
     enum CodingKeys: String, CodingKey {
