@@ -140,15 +140,24 @@ class BackendPriceService {
         var results: [BackendPrice] = []
 
         for item in pricesResponse.prices {
-            guard let price = item.price else { continue }
+            guard let price = item.price, price > 0 else { continue }
 
             let updatedAt = parseDate(item.updatedAt ?? "")
+
+            // Apply 1/x inversion for forex (fx) prices
+            // This converts from "1 USD = X currency" to "1 currency = X USD"
+            let adjustedPrice: Decimal
+            if item.assetClass.lowercased() == "fx" {
+                adjustedPrice = Decimal(1.0 / price)
+            } else {
+                adjustedPrice = Decimal(price)
+            }
 
             let backendPrice = BackendPrice(
                 assetCode: item.symbol,
                 displayName: item.displayName,
                 assetClass: item.assetClass,
-                price: Decimal(price),
+                price: adjustedPrice,
                 change24h: item.percentChange24h,
                 currency: item.currency,
                 updatedAt: updatedAt

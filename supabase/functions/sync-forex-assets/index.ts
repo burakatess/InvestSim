@@ -15,41 +15,41 @@ Deno.serve(async (req) => {
         const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         const supabase = createClient(supabaseUrl, supabaseKey)
 
-        // Define major forex pairs
+        // Define major forex pairs - ALL in XXXUSD format (1 XXX = ? USD)
         const forexPairs = [
-            // TRY pairs (Turkish Lira)
-            { code: 'USDTRY', name: 'Dolar/TL', base: 'USD', quote: 'TRY' },
-            { code: 'EURTRY', name: 'Euro/TL', base: 'EUR', quote: 'TRY' },
-            { code: 'GBPTRY', name: 'Sterlin/TL', base: 'GBP', quote: 'TRY' },
-            { code: 'CHFTRY', name: 'İsviçre Frangı/TL', base: 'CHF', quote: 'TRY' },
-            { code: 'JPYTRY', name: 'Japon Yeni/TL', base: 'JPY', quote: 'TRY' },
-            { code: 'AUDTRY', name: 'Avustralya Doları/TL', base: 'AUD', quote: 'TRY' },
-            { code: 'CADTRY', name: 'Kanada Doları/TL', base: 'CAD', quote: 'TRY' },
+            // Major pairs (already XXXUSD format)
+            { code: 'EURUSD', name: 'Euro / US Dollar' },
+            { code: 'GBPUSD', name: 'British Pound / US Dollar' },
+            { code: 'AUDUSD', name: 'Australian Dollar / US Dollar' },
+            { code: 'NZDUSD', name: 'New Zealand Dollar / US Dollar' },
 
-            // Major pairs (USD base)
-            { code: 'EURUSD', name: 'Euro/Dolar', base: 'EUR', quote: 'USD' },
-            { code: 'GBPUSD', name: 'Sterlin/Dolar', base: 'GBP', quote: 'USD' },
-            { code: 'USDJPY', name: 'Dolar/Japon Yeni', base: 'USD', quote: 'JPY' },
-            { code: 'USDCHF', name: 'Dolar/İsviçre Frangı', base: 'USD', quote: 'CHF' },
-            { code: 'AUDUSD', name: 'Avustralya Doları/Dolar', base: 'AUD', quote: 'USD' },
-            { code: 'USDCAD', name: 'Dolar/Kanada Doları', base: 'USD', quote: 'CAD' },
-            { code: 'NZDUSD', name: 'Yeni Zelanda Doları/Dolar', base: 'NZD', quote: 'USD' },
+            // Inverted pairs (formerly USDXXX, now XXXUSD)
+            { code: 'JPYUSD', name: 'Japanese Yen / US Dollar' },
+            { code: 'CHFUSD', name: 'Swiss Franc / US Dollar' },
+            { code: 'CADUSD', name: 'Canadian Dollar / US Dollar' },
+            { code: 'TRYUSD', name: 'Turkish Lira / US Dollar' },
+            { code: 'CNYUSD', name: 'Chinese Yuan / US Dollar' },
+            { code: 'INRUSD', name: 'Indian Rupee / US Dollar' },
+            { code: 'BRLUSD', name: 'Brazilian Real / US Dollar' },
+            { code: 'MXNUSD', name: 'Mexican Peso / US Dollar' },
+            { code: 'ZARUSD', name: 'South African Rand / US Dollar' },
+            { code: 'RUBUSD', name: 'Russian Ruble / US Dollar' },
 
-            // Cross pairs
-            { code: 'EURGBP', name: 'Euro/Sterlin', base: 'EUR', quote: 'GBP' },
-            { code: 'EURJPY', name: 'Euro/Japon Yeni', base: 'EUR', quote: 'JPY' },
-            { code: 'GBPJPY', name: 'Sterlin/Japon Yeni', base: 'GBP', quote: 'JPY' },
-            { code: 'EURCHF', name: 'Euro/İsviçre Frangı', base: 'EUR', quote: 'CHF' },
-            { code: 'EURAUD', name: 'Euro/Avustralya Doları', base: 'EUR', quote: 'AUD' },
-            { code: 'EURCAD', name: 'Euro/Kanada Doları', base: 'EUR', quote: 'CAD' },
+            // Cross pairs (keeping as-is for now)
+            { code: 'EURGBP', name: 'Euro / British Pound' },
+            { code: 'EURJPY', name: 'Euro / Japanese Yen' },
+            { code: 'GBPJPY', name: 'British Pound / Japanese Yen' },
+            { code: 'EURCHF', name: 'Euro / Swiss Franc' },
+            { code: 'EURAUD', name: 'Euro / Australian Dollar' },
+            { code: 'EURCAD', name: 'Euro / Canadian Dollar' },
 
-            // Emerging markets
-            { code: 'USDRUB', name: 'Dolar/Ruble', base: 'USD', quote: 'RUB' },
-            { code: 'USDCNY', name: 'Dolar/Yuan', base: 'USD', quote: 'CNY' },
-            { code: 'USDINR', name: 'Dolar/Rupi', base: 'USD', quote: 'INR' },
-            { code: 'USDBRL', name: 'Dolar/Real', base: 'USD', quote: 'BRL' },
-            { code: 'USDMXN', name: 'Dolar/Peso', base: 'USD', quote: 'MXN' },
-            { code: 'USDZAR', name: 'Dolar/Rand', base: 'USD', quote: 'ZAR' },
+            // TRY cross pairs (keeping for Turkish users)
+            { code: 'EURTRY', name: 'Euro / Turkish Lira' },
+            { code: 'GBPTRY', name: 'British Pound / Turkish Lira' },
+            { code: 'CHFTRY', name: 'Swiss Franc / Turkish Lira' },
+            { code: 'JPYTRY', name: 'Japanese Yen / Turkish Lira' },
+            { code: 'AUDTRY', name: 'Australian Dollar / Turkish Lira' },
+            { code: 'CADTRY', name: 'Canadian Dollar / Turkish Lira' },
         ]
 
         // Prepare assets for insertion

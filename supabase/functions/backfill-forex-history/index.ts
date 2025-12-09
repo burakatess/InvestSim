@@ -6,14 +6,13 @@ const corsHeaders = {
 }
 
 interface HistoricalPrice {
-    asset_code: string
+    asset_id: string
     date: string
     open: number
     high: number
     low: number
     close: number
     volume: number | null
-    category: string
     provider: string
 }
 
@@ -33,14 +32,14 @@ Deno.serve(async (req) => {
         const endDate = new Date()
         endDate.setHours(0, 0, 0, 0)
 
-        // Calculate start date by subtracting milliseconds
+        // Calculate start date
         const startDate = new Date(endDate.getTime() - (days * 24 * 60 * 60 * 1000))
 
-        // Fetch forex assets
+        // Fetch forex assets (using correct schema)
         const { data: assets, error: assetsError } = await supabase
             .from('assets')
-            .select('code, display_name')
-            .eq('category', 'forex')
+            .select('id, symbol, display_name')
+            .eq('asset_class', 'fx')
 
         if (assetsError) throw assetsError
         if (!assets || assets.length === 0) {
@@ -50,24 +49,28 @@ Deno.serve(async (req) => {
             })
         }
 
-        // Frankfurter only supports EUR as base currency
-        // We need to fetch all currencies and calculate cross rates
-        const allCurrencies = new Set<string>()
+        console.log(`Found ${assets.length} forex assets`)
 
+        // Collect all currencies needed
+        const allCurrencies = new Set<string>()
         for (const asset of assets) {
-            const [base, quote] = asset.code.split('/')
-            allCurrencies.add(base)
-            allCurrencies.add(quote)
+            const symbol = asset.symbol.replace(/[\/-]/g, '').toUpperCase()
+            if (symbol.length === 6) {
+                allCurrencies.add(symbol.substring(0, 3))
+                allCurrencies.add(symbol.substring(3, 6))
+            }
         }
 
         // Remove EUR as it's the base
         allCurrencies.delete('EUR')
         const currenciesStr = Array.from(allCurrencies).join(',')
 
-        const historicalPrices: HistoricalPrice[] = []
+        console.log(`Currencies needed: ${currenciesStr}`)
+
+        // Use Map for deduplication (key = asset_id + date)
+        const priceMap = new Map<string, HistoricalPrice>()
 
         // Frankfurter has a 90-day limit per request
-        // Split into 90-day chunks
         const chunkDays = 90
         let currentStart = new Date(startDate)
 
@@ -87,7 +90,6 @@ Deno.serve(async (req) => {
 
             if (!response.ok) {
                 console.error(`Frankfurter API error: ${response.statusText}`)
-                // Continue to next chunk
                 currentStart = new Date(currentEnd)
                 currentStart.setDate(currentStart.getDate() + 1)
                 continue
@@ -102,37 +104,40 @@ Deno.serve(async (req) => {
                 continue
             }
 
-            console.log(`Received ${Object.keys(data.rates).length} days`)
+            console.log(`Received ${Object.keys(data.rates).length} days of data`)
 
             // Process each date
             for (const [date, eurRates] of Object.entries(data.rates)) {
-                // eurRates = { USD: 1.08, TRY: 32.5, GBP: 0.85, ... }
                 const rates = eurRates as Record<string, number>
-
-                // Add EUR itself
                 const allRates: Record<string, number> = { EUR: 1.0, ...rates }
 
                 // Calculate cross rates for each asset
                 for (const asset of assets) {
-                    const [base, quote] = asset.code.split('/')
+                    const symbol = asset.symbol.replace(/[\/-]/g, '').toUpperCase()
+
+                    if (symbol.length !== 6) continue
+
+                    const base = symbol.substring(0, 3)
+                    const quote = symbol.substring(3, 6)
 
                     const baseRate = allRates[base]
                     const quoteRate = allRates[quote]
 
                     if (baseRate && quoteRate) {
-                        // Cross rate: base/quote = (EUR/quote) / (EUR/base)
+                        // For XXXUSD format: 1 XXX = quoteRate / baseRate
                         const crossRate = quoteRate / baseRate
 
-                        historicalPrices.push({
-                            asset_code: asset.code,
+                        // Use Map key to deduplicate
+                        const key = `${asset.id}_${date}`
+                        priceMap.set(key, {
+                            asset_id: asset.id,
                             date: date,
                             open: crossRate,
                             high: crossRate,
                             low: crossRate,
                             close: crossRate,
                             volume: null,
-                            category: 'forex',
-                            provider: 'frankfurter',
+                            provider: 'fx',
                         })
                     }
                 }
@@ -143,9 +148,12 @@ Deno.serve(async (req) => {
             currentStart.setDate(currentStart.getDate() + 1)
         }
 
-        console.log(`Generated ${historicalPrices.length} historical price records`)
+        // Convert Map to array (deduplicated)
+        const historicalPrices = Array.from(priceMap.values())
 
-        // Insert in batches to avoid timeout
+        console.log(`Generated ${historicalPrices.length} unique historical price records`)
+
+        // Insert in batches
         const batchSize = 1000
         let inserted = 0
 
@@ -153,8 +161,8 @@ Deno.serve(async (req) => {
             const batch = historicalPrices.slice(i, i + batchSize)
 
             const { error: insertError } = await supabase
-                .from('historical_prices')
-                .upsert(batch, { onConflict: 'asset_code,date' })
+                .from('prices_history')
+                .upsert(batch, { onConflict: 'asset_id,date' })
 
             if (insertError) {
                 console.error('Insert error:', insertError)

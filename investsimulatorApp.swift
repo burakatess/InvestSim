@@ -32,11 +32,21 @@ struct InvestSimApp: App {
                             .onAppear {
                                 userDataManager.switchUser(userId: user.id)
 
-                                // Initialize dynamic asset catalog
+                                // Initialize dynamic asset catalog and preload prices
                                 Task {
                                     print("🚀 Initializing dynamic asset catalog...")
                                     // Force sync on first launch to ensure all categories load
                                     await AssetCatalogManager.shared.forceSync()
+
+                                    // Preload all prices on app launch
+                                    print("💰 Preloading prices...")
+                                    do {
+                                        let prices = try await BackendPriceService.shared
+                                            .fetchAllPrices()
+                                        print("✅ Preloaded \(prices.count) prices on launch")
+                                    } catch {
+                                        print("⚠️ Failed to preload prices: \(error)")
+                                    }
                                 }
 
                                 // Start background sync scheduler

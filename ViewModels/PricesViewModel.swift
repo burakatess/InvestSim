@@ -79,6 +79,9 @@ final class PricesViewModel: ObservableObject {
 
         setupAutoRefreshTimer()
         setupUpdateFlushTimer()
+
+        // Immediately load prices on init
+        refreshPrices()
     }
 
     private func setupUpdateFlushTimer() {

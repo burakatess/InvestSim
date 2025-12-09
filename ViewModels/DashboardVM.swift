@@ -77,6 +77,13 @@ final class DashboardVM: ObservableObject {
 
         // Setup throttling timer
         setupUpdateTimer()
+
+        // Fetch prices immediately on init
+        Task { @MainActor [weak self] in
+            guard let self = self else { return }
+            print("💰 DashboardVM: Fetching initial prices...")
+            await self.updatePrices()
+        }
     }
 
     deinit {
